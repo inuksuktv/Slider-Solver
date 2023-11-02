@@ -33,8 +33,8 @@ public class GridManager : MonoBehaviour
 
     private void GenerateTiles()
     {
-        for (int z=0; z < height; z++) {
-            for (int x=0; x < width; x++) {
+        for (int z = 0; z < height; z++) {
+            for (int x = 0; x < width; x++) {
                 //Create each tile and name it.
                 Vector3 tilePosition = new(x, verticalOffset, z);
                 Tile spawnedTile = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
@@ -52,9 +52,20 @@ public class GridManager : MonoBehaviour
 
     public Tile GetTileAtPosition(Vector3 position)
     {
-        if(tiles.TryGetValue(position, out var tile)) {
+        if (tiles.TryGetValue(new Vector3 (position.x, verticalOffset, position.z), out var tile)) {
             return tile;
         }
         return null;
+    }
+
+    public Vector3Int GetClosestCell(Vector3 position)
+    {
+        Vector3Int closestCell = Grid.WorldToCell(position);
+        return closestCell;
+    }
+
+    public void MoveUnit(Transform unit, Vector3Int target, bool animate = true)
+    {
+        unit.position = target;
     }
 }
