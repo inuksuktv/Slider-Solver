@@ -27,11 +27,6 @@ public class PlayerController : MonoBehaviour
         moveAction.Disable();
     }
 
-    void Start()
-    {
-        
-    }
-
     private void Update()
     {
         Debug.Log(moveAction.ReadValue<Vector2>());
