@@ -11,28 +11,29 @@ public class CommandManager : MonoBehaviour
         void Undo();
     }
 
-    public static CommandManager myInstance { get; private set; }
+    public static CommandManager Instance => myInstance;
+    private static CommandManager myInstance;
 
-    private Stack<ICommand> myCommandsBuffer = new Stack<ICommand>();
+    private Stack<ICommand> commands = new();
 
     private void Awake()
     {
         myInstance = this;
     }
 
-    public void AddMove(ICommand command)
+    public void AddCommand(ICommand command)
     {
         command.Execute();
-        myCommandsBuffer.Push(command);
+        commands.Push(command);
     }
 
     public void Undo()
     {
-        if (myCommandsBuffer.Count == 0) {
+        if (commands.Count == 0) {
             return;
         }
 
-        var command = myCommandsBuffer.Pop();
+        ICommand command = commands.Pop();
         command.Undo();
     }
 }

@@ -1,5 +1,5 @@
 {
-    "name": "New Controls",
+    "name": "Controls",
     "maps": [
         {
             "name": "Main",
@@ -83,7 +83,7 @@
                     "isPartOfComposite": false
                 },
                 {
-                    "name": "up",
+                    "name": "Up",
                     "id": "e68c47ae-21cf-4bee-803c-1a78b64d4b26",
                     "path": "<Keyboard>/upArrow",
                     "interactions": "",
@@ -94,7 +94,7 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "down",
+                    "name": "Down",
                     "id": "fc289dbf-810a-462c-b1aa-61f29afa9017",
                     "path": "<Keyboard>/downArrow",
                     "interactions": "",
@@ -105,8 +105,8 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "left",
-                    "id": "10028ac4-030a-4fc9-8418-ce368c50d8dc",
+                    "name": "Left",
+                    "id": "58a4841c-3c45-4f5b-93de-98da5245cb0d",
                     "path": "<Keyboard>/leftArrow",
                     "interactions": "",
                     "processors": "",
@@ -116,8 +116,8 @@
                     "isPartOfComposite": true
                 },
                 {
-                    "name": "right",
-                    "id": "02b17227-c9bb-4053-9866-8d609ed0fcc1",
+                    "name": "Right",
+                    "id": "00390997-876f-43c0-8fd7-5bf78a8eaf6f",
                     "path": "<Keyboard>/rightArrow",
                     "interactions": "",
                     "processors": "",

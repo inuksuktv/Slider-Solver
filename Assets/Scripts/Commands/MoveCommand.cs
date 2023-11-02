@@ -15,7 +15,7 @@ public class MoveCommand : CommandManager.ICommand
 
     public void Execute()
     {
-
+        // I need to create a static instance of the grid manager so that I can get a reference to the player object.
     }
 
     public void Undo()

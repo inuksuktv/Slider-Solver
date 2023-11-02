@@ -119,10 +119,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d76897132e68ae499b36bd680ed4227, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _baseColor: {r: 0, g: 0.4174893, b: 1, a: 0}
-  _offsetColor: {r: 0.35884652, g: 0.6465469, b: 0.990566, a: 0}
-  _renderer: {fileID: 132378574796904956}
-  _highlight: {fileID: 7679982640247714490}
+  baseColor: {r: 0, g: 0.45122194, b: 1, a: 0}
+  offsetColor: {r: 0.3153435, g: 0.6792514, b: 0.9716981, a: 0}
+  highlight: {fileID: 7679982640247714490}
 --- !u!1 &7679982640247714490
 GameObject:
   m_ObjectHideFlags: 0

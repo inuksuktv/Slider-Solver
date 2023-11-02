@@ -4,38 +4,46 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    [SerializeField] private int _width, _height;
+    public Grid Grid => myGrid;
+    [SerializeField] private int width, height;
+    [SerializeField] private Tile tilePrefab;
+    [SerializeField] private GameObject player;
 
-    [SerializeField] private Tile _tilePrefab;
+    private Transform mainCamera;
+    private Dictionary<Vector3, Tile> tiles = new();
 
-    [SerializeField] private Transform _cam;
-
-    private Dictionary<Vector3, Tile> _tiles = new Dictionary<Vector3, Tile>();
+    private Grid myGrid;
+    private readonly float verticalOffset = -0.6f;
 
     private void Start()
     {
-        GenerateGrid();
+        mainCamera = GameObject.Find("Main Camera").transform;
+        myGrid = GetComponent<Grid>();
+
+        GenerateTiles();
+        Instantiate(player, transform.position, Quaternion.identity);
     }
 
-    private void GenerateGrid()
+    private void GenerateTiles()
     {
-        for (int z=0; z < _width; z++) {
-            for (int x=0; x < _height; x++) {
-                var spawnedTile = Instantiate(_tilePrefab, new Vector3(x, -0.6f, z), Quaternion.identity);
+        for (int z=0; z < height; z++) {
+            for (int x=0; x < width; x++) {
+                Vector3 tilePosition = new(x, verticalOffset, z);
+                Tile spawnedTile = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
                 spawnedTile.name = $"Tile {x} {z}";
 
-                var isOffset = (x % 2 == 0 && z % 2 != 0) || (x % 2 != 0 && z % 2 == 0);
-                spawnedTile.Init(isOffset);
+                bool isOffset = (x % 2 == 0 && z % 2 != 0) || (x % 2 != 0 && z % 2 == 0);
+                spawnedTile.InitializeColor(isOffset);
 
-                _tiles.Add(new Vector3(x, -0.6f, z), spawnedTile);
+                tiles.Add(tilePosition, spawnedTile);
             }
         }
-        _cam.transform.position = new Vector3((float)_width / 2 - 0.5f, 10, (float)_height / 2 - 0.5f);
+        mainCamera.position = new Vector3((float)width / 2 - 0.5f, 10f, (float)height / 2 - 0.5f);
     }
 
-    public Tile GetTileAtPosition(Vector3 pos)
+    public Tile GetTileAtPosition(Vector3 position)
     {
-        if(_tiles.TryGetValue(pos, out var tile)) {
+        if(tiles.TryGetValue(position, out var tile)) {
             return tile;
         }
         return null;
