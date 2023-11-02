@@ -11,14 +11,14 @@ public class CommandManager : MonoBehaviour
         void Undo();
     }
 
-    public static CommandManager Instance => myInstance;
-    private static CommandManager myInstance;
+    public static CommandManager Instance { get; private set; }
 
     private Stack<ICommand> commands = new();
 
     private void Awake()
     {
-        myInstance = this;
+        if (Instance != null && Instance != this) { Destroy(this); }
+        else { Instance = this; }
     }
 
     public void AddCommand(ICommand command)

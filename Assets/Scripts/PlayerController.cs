@@ -7,44 +7,83 @@ public class PlayerController : MonoBehaviour
 {
     private PlayerInput playerInput;
 
-    private InputAction moveAction;
+    private InputAction upAction;
+    private InputAction downAction;
+    private InputAction leftAction;
+    private InputAction rightAction;
     private Vector2 move;
 
     private void Awake()
     {
         playerInput = GetComponent<PlayerInput>();
-        moveAction = playerInput.actions["Move"];
+        upAction = playerInput.actions["Up"];
+        downAction = playerInput.actions["Down"];
+        leftAction = playerInput.actions["Left"];
+        rightAction = playerInput.actions["Right"];
     }
 
     private void OnEnable()
     {
-        moveAction.Enable();
+        upAction.performed += Up;
+        downAction.performed += Down;
+        leftAction.performed += Left;
+        rightAction.performed += Right;
+
+        upAction.Enable();
+        downAction.Enable();
+        leftAction.Enable();
+        rightAction.Enable();
     }
 
     private void OnDisable()
     {
-        moveAction.Disable();
+        upAction.performed -= Up;
+        downAction.performed -= Down;
+        leftAction.performed -= Left;
+        rightAction.performed -= Right;
+
+        upAction.Disable();
+        downAction.Disable();
+        leftAction.Disable();
+        rightAction.Disable();
+    }
+    private void Up(InputAction.CallbackContext context)
+    {
+        // In the simplest case we don't want input to do anything while a move is being animated, which is handled by a single bool. If we
+        // add another bool to manage another state though, I should just turn it into a state machine.
+        Vector3Int cellPosition = GetClosestCell(transform.position);
+        Vector3Int targetCell = GetClosestCell(transform.position + Vector3Int.forward);
+        MoveCommand cmd = new MoveCommand(cellPosition, targetCell);
+        CommandManager.Instance.AddCommand(cmd);
     }
 
-    private void Update()
+    private void Down(InputAction.CallbackContext context)
     {
-        // If we're animating, early return so we don't fire TryMove.
-
-        move = moveAction.ReadValue<Vector2>();
-        if (move != Vector2.zero) { TryMove(); }
+        Vector3Int cellPosition = GetClosestCell(transform.position);
+        Vector3Int targetCell = GetClosestCell(transform.position + Vector3Int.back);
+        MoveCommand cmd = new MoveCommand(cellPosition, targetCell);
+        CommandManager.Instance.AddCommand(cmd);
     }
 
-    private void TryMove()
+    private void Left(InputAction.CallbackContext context)
     {
-        Vector3Int playerCell = GetClosestCell(transform.position);
-        Vector3Int targetCell = new(playerCell.x + (int)move.x, playerCell.y, playerCell.z + (int)move.y);
-        MoveCommand command = new(playerCell,targetCell);
-        CommandManager.Instance.AddCommand(command);
+        Vector3Int cellPosition = GetClosestCell(transform.position);
+        Vector3Int targetCell = GetClosestCell(transform.position + Vector3Int.left);
+        MoveCommand cmd = new MoveCommand(cellPosition, targetCell);
+        CommandManager.Instance.AddCommand(cmd);
+    }
+
+    private void Right(InputAction.CallbackContext context)
+    {
+        Vector3Int cellPosition = GetClosestCell(transform.position);
+        Vector3Int targetCell = GetClosestCell(transform.position + Vector3Int.right);
+        MoveCommand cmd = new MoveCommand(cellPosition, targetCell);
+        CommandManager.Instance.AddCommand(cmd);
     }
 
     private Vector3Int GetClosestCell(Vector3 position)
     {
-        var idx = GameObject.Find("GridManager").GetComponent<GridManager>().Grid.WorldToCell(position);
-        return idx;
+        Vector3Int closestCell = GridManager.Instance.Grid.WorldToCell(position);
+        return closestCell;
     }
 }
