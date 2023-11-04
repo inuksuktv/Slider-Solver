@@ -3,7 +3,10 @@ guid: 0d46c8c3279b15b4e9ad97e58c9a3492
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - tilePrefab: {fileID: 3560232620323495234, guid: 7365ae1a27b983145b1fb4163185594c, type: 3}
+  - mountainPrefab: {instanceID: 0}
+  - player: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

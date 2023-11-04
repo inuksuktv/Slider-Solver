@@ -8,11 +8,12 @@ public class GridManager : MonoBehaviour
     public Grid Grid { get; private set; }
 
     [SerializeField] private int width, height;
-    [SerializeField] private Tile tilePrefab;
+    [SerializeField] private SlideTile slidePrefab;
+    [SerializeField] private MountainTile mountainPrefab;
     [SerializeField] private GameObject player;
 
     private Transform mainCamera;
-    private Dictionary<Vector3, Tile> tiles = new();
+    private Dictionary<Vector3Int, Tile> tiles = new();
 
     private readonly float verticalOffset = -0.6f;
 
@@ -33,26 +34,62 @@ public class GridManager : MonoBehaviour
 
     private void GenerateTiles()
     {
+        // Generate the playable tiles.
+        Vector3 tilePosition;
+        SlideTile slideTile;
         for (int z = 0; z < height; z++) {
             for (int x = 0; x < width; x++) {
                 //Create each tile and name it.
-                Vector3 tilePosition = new(x, verticalOffset, z);
-                Tile spawnedTile = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
-                spawnedTile.name = $"Tile {x} {z}";
+                tilePosition = new(x, verticalOffset, z);
+                slideTile = Instantiate(slidePrefab, tilePosition, Quaternion.identity);
+                slideTile.name = $"Tile {x} {z}";
 
                 //Change the color of offset tiles to look like a checkerboard.
-                bool isOffset = (x % 2 == 0 && z % 2 != 0) || (x % 2 != 0 && z % 2 == 0);
-                spawnedTile.InitializeColor(isOffset);
+                bool isOffset = (x + z) % 2 == 1;
+                slideTile.InitializeColor(isOffset);
 
-                tiles.Add(tilePosition, spawnedTile);
+                tiles.Add(GetClosestCell(tilePosition), slideTile);
             }
         }
+
+        Tile spawnedTile;
+        // Generate the wall tiles.
+        for (int x = -1; x < width + 1; x++) {
+            tilePosition = new(x, verticalOffset + 0.5f, -1);
+            spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
+            spawnedTile.name = $"Tile {x} -1";
+
+            tiles.Add(GetClosestCell(tilePosition), spawnedTile);
+        }
+        for (int z = 0; z < height + 1; z++) {
+            tilePosition = new(width, verticalOffset + 0.5f, z);
+            spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
+            spawnedTile.name = $"Tile {width} {z}";
+
+            tiles.Add(GetClosestCell(tilePosition), spawnedTile);
+        }
+        for (int x = width - 1; x > -2; x--) {
+            tilePosition = new(x, verticalOffset + 0.5f, height);
+            spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
+            spawnedTile.name = $"Tile {x} {height}";
+
+            tiles.Add(GetClosestCell(tilePosition), spawnedTile);
+        }
+        for (int z = height - 1; z > -1; z--) {
+            tilePosition = new(-1, verticalOffset + 0.5f, z);
+            spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
+            spawnedTile.name = $"Tile -1 {z}";
+
+            tiles.Add(GetClosestCell(tilePosition), spawnedTile);
+        }
+
+        // Move the camera over the center of the board.
         mainCamera.position = new Vector3((float)width / 2 - 0.5f, 10f, (float)height / 2 - 0.5f);
     }
 
-    public Tile GetTileAtPosition(Vector3 position)
+    public Tile GetTileAtPosition(Vector3Int position)
     {
-        if (tiles.TryGetValue(new Vector3 (position.x, verticalOffset, position.z), out var tile)) {
+        if (tiles.TryGetValue(position, out var tile)) {
             return tile;
         }
         return null;

@@ -17,9 +17,9 @@ public class MoveCommand : CommandManager.ICommand
 
     public void Execute()
     {
-        // Test if a tile exists at the destination.
+        // Test if a legal tile exists at the destination.
         Tile targetTile = GridManager.Instance.GetTileAtPosition(myTo);
-        if (targetTile != null) {
+        if (targetTile != null && !targetTile.blocksMove) {
             GridManager.Instance.MoveUnit(myUnit, myTo);
         }
         else {
