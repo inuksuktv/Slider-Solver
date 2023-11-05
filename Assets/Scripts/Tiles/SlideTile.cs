@@ -5,19 +5,14 @@ using UnityEngine;
 public class SlideTile : Tile
 {
     [SerializeField] private Color baseColor, offsetColor;
-    public override bool BlocksMove
-    {
-        get { return blocksMove; }
-        set { blocksMove = value; }
-    }
 
     public void BoxUpdate()
     {
+        BlocksMove = false;
         foreach (GameObject box in GridManager.Instance.boxes) {
             if (GridManager.Instance.GetClosestCell(box.transform.position) == GridManager.Instance.GetClosestCell(transform.position)) {
                 BlocksMove = true;
             }
-            else { BlocksMove = false; }
         }
     }
 

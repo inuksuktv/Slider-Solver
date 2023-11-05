@@ -39,11 +39,6 @@ public class GridManager : MonoBehaviour
         Instantiate(player);
     }
 
-    private void Start()
-    {
-        
-    }
-
     private void GenerateTiles()
     {
         // Generate the playable tiles.
@@ -52,7 +47,7 @@ public class GridManager : MonoBehaviour
         for (int z = 0; z < height; z++) {
             for (int x = 0; x < width; x++) {
                 //Create each tile and name it.
-                tilePosition = new(x, tileOffset + 0.5f*slidePrefab.transform.localScale.y, z);
+                tilePosition = new(x, tileOffset + slidePrefab.transform.localScale.y / 2, z);
                 slideTile = Instantiate(slidePrefab, tilePosition, Quaternion.identity);
                 slideTile.name = $"Tile {x} {z}";
                 slideTile.transform.parent = transform;
@@ -61,15 +56,15 @@ public class GridManager : MonoBehaviour
                 bool isOffset = (x + z) % 2 == 1;
                 slideTile.InitializeColor(isOffset);
 
+                slideTile.BoxUpdate();
                 tiles.Add(GetClosestCell(tilePosition), slideTile);
             }
         }
 
-        // Generate the wall tiles.
         Tile spawnedTile;
         // Bottom wall.
         for (int x = -1; x < width + 1; x++) {
-            tilePosition = new (x, tileOffset + 0.5f * slidePrefab.transform.localScale.y, -1);
+            tilePosition = new(x, tileOffset + slidePrefab.transform.localScale.y / 2, -1);
             spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
             spawnedTile.name = $"Tile {x} -1";
             spawnedTile.transform.parent = transform;
@@ -78,7 +73,7 @@ public class GridManager : MonoBehaviour
         }
         // Right wall.
         for (int z = 0; z < height + 1; z++) {
-            tilePosition = new (width, tileOffset + 0.5f * slidePrefab.transform.localScale.y, z);
+            tilePosition = new(width, tileOffset + slidePrefab.transform.localScale.y / 2, z);
             spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
             spawnedTile.name = $"Tile {width} {z}";
             spawnedTile.transform.parent = transform;
@@ -87,7 +82,7 @@ public class GridManager : MonoBehaviour
         }
         // Top wall.
         for (int x = width - 1; x > -2; x--) {
-            tilePosition = new (x, tileOffset + 0.5f * slidePrefab.transform.localScale.y, height);
+            tilePosition = new(x, tileOffset + slidePrefab.transform.localScale.y / 2, height);
             spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
             spawnedTile.name = $"Tile {x} {height}";
             spawnedTile.transform.parent = transform;
@@ -96,7 +91,7 @@ public class GridManager : MonoBehaviour
         }
         // Left wall.
         for (int z = height - 1; z > -1; z--) {
-            tilePosition = new (-1, tileOffset + 0.5f * slidePrefab.transform.localScale.y, z);
+            tilePosition = new(-1, tileOffset + slidePrefab.transform.localScale.y / 2, z);
             spawnedTile = Instantiate(mountainPrefab, tilePosition, Quaternion.identity);
             spawnedTile.name = $"Tile -1 {z}";
             spawnedTile.transform.parent = transform;
@@ -125,11 +120,13 @@ public class GridManager : MonoBehaviour
                 tilePosition.z = Random.Range(0, height);
                 break;
         }
+
         // Remove the wall tile and place a goal tile at the selected position.
         tiles.Remove(GetClosestCell(tilePosition));
         GameObject wall = transform.Find($"Tile {tilePosition.x} {tilePosition.z}").gameObject;
         Destroy(wall);
-        tilePosition.y = tileOffset + 0.5f * goalPrefab.transform.localScale.y;
+
+        tilePosition.y = tileOffset + goalPrefab.transform.localScale.y / 2;
         Tile goalTile = Instantiate(goalPrefab, tilePosition, Quaternion.identity);
         goalTile.name = $"Tile {tilePosition.x} {tilePosition.z}";
         goalTile.transform.parent = transform;
@@ -138,6 +135,12 @@ public class GridManager : MonoBehaviour
 
         // Move the camera over the center of the board.
         mainCamera.position = new Vector3((float)width / 2 - 0.5f, 15f, (float)height / 2 - 0.5f);
+
+        // Update BlocksMove for each tile with a box.
+        foreach (GameObject box in boxes) {
+            SlideTile tile = (SlideTile)GetTileAtPosition(GetClosestCell(box.transform.position));
+            tile.BoxUpdate();
+        }
     }
 
     public Tile GetTileAtPosition(Vector3Int position)

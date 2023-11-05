@@ -53,24 +53,30 @@ public class PlayerController : MonoBehaviour
         Vector3Int moveDirection = Vector3Int.forward;
         Vector3Int origin = GridManager.Instance.GetClosestCell(transform.position);
         Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + moveDirection);
+        GameObject pushedBox;
 
         // If player is pushing a box, move the box instead.
         foreach (GameObject box in GridManager.Instance.boxes) {
             if (targetCell == GridManager.Instance.GetClosestCell(box.transform.position)) {
                 origin = GridManager.Instance.GetClosestCell(box.transform.position);
                 targetCell = GridManager.Instance.GetClosestCell(box.transform.position + moveDirection);
+                pushedBox = box;
             }
         }
 
         // Check if the move is illegal.
-        if (GridManager.Instance.GetTileAtPosition(targetCell).BlocksMove) { return; }
+        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
+        if (testTile == null || testTile.BlocksMove) { 
+            return; 
+        }
 
         // Search in the direction of the move until a tile that blocks movement is found.
-        int maxMove = Mathf.Max(GridManager.Instance.width, GridManager.Instance.height);
+        int maxMove = Mathf.Max(GridManager.Instance.width + 1, GridManager.Instance.height + 1);
         for (int i = 1; i < maxMove; i++) {
-            Tile testTile = GridManager.Instance.GetTileAtPosition(origin + moveDirection * i);
-            if (testTile.BlocksMove) {
-                targetCell = GridManager.Instance.GetClosestCell(testTile.transform.position - moveDirection);
+            Tile nextTile = GridManager.Instance.GetTileAtPosition(origin + moveDirection * i);
+            if (nextTile == null || nextTile.BlocksMove) {
+                targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - moveDirection);
+                break;
             }
         }
 
