@@ -6,12 +6,12 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     private PlayerInput playerInput;
-
     private InputAction upAction;
     private InputAction downAction;
     private InputAction leftAction;
     private InputAction rightAction;
-    private Vector2 move;
+
+    private Tile goalTile;
 
     private void Awake()
     {
@@ -79,5 +79,17 @@ public class PlayerController : MonoBehaviour
         Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + Vector3Int.right);
         MoveCommand command = new(cellPosition, targetCell, transform);
         CommandManager.Instance.AddCommand(command);
+    }
+
+    private void Start()
+    {
+        goalTile = FindFirstObjectByType<GoalTile>();
+    }
+
+    private void Update()
+    {
+        if (GridManager.Instance.GetClosestCell(transform.position) == GridManager.Instance.GetClosestCell(goalTile.transform.position)) {
+            Debug.Log("You win the game!");
+        }
     }
 }
