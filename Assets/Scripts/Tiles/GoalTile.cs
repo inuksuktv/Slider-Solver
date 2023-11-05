@@ -4,5 +4,8 @@ using UnityEngine;
 
 public class GoalTile : Tile
 {
-    public override bool blocksMove => false;
+    public override bool BlocksMove
+    {
+        get { return false; }
+    }
 }

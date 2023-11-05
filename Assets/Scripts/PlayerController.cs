@@ -47,13 +47,35 @@ public class PlayerController : MonoBehaviour
         leftAction.Disable();
         rightAction.Disable();
     }
+
     private void Up(InputAction.CallbackContext context)
     {
-        // In the simplest case we don't want input to do anything while a move is being animated, which is handled by a single bool. If we
-        // add another bool to manage another state though, I should just turn it into a state machine.
-        Vector3Int cellPosition = GridManager.Instance.GetClosestCell(transform.position);
-        Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + Vector3Int.forward);
-        MoveCommand command = new(cellPosition, targetCell, transform);
+        Vector3Int moveDirection = Vector3Int.forward;
+        Vector3Int origin = GridManager.Instance.GetClosestCell(transform.position);
+        Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + moveDirection);
+
+        // If player is pushing a box, move the box instead.
+        foreach (GameObject box in GridManager.Instance.boxes) {
+            if (targetCell == GridManager.Instance.GetClosestCell(box.transform.position)) {
+                origin = GridManager.Instance.GetClosestCell(box.transform.position);
+                targetCell = GridManager.Instance.GetClosestCell(box.transform.position + moveDirection);
+            }
+        }
+
+        // Check if the move is illegal.
+        if (GridManager.Instance.GetTileAtPosition(targetCell).BlocksMove) { return; }
+
+        // Search in the direction of the move until a tile that blocks movement is found.
+        int maxMove = Mathf.Max(GridManager.Instance.width, GridManager.Instance.height);
+        for (int i = 1; i < maxMove; i++) {
+            Tile testTile = GridManager.Instance.GetTileAtPosition(origin + moveDirection * i);
+            if (testTile.BlocksMove) {
+                targetCell = GridManager.Instance.GetClosestCell(testTile.transform.position - moveDirection);
+            }
+        }
+
+        // Send the move command.
+        MoveCommand command = new(origin, targetCell, transform);
         CommandManager.Instance.AddCommand(command);
     }
 

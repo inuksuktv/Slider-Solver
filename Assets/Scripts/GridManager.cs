@@ -6,8 +6,9 @@ public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
     public Grid Grid { get; private set; }
+    public List<GameObject> boxes = new();
 
-    [SerializeField] private int width, height;
+    public int width, height, boxCount;
     [SerializeField] private SlideTile slidePrefab;
     [SerializeField] private MountainTile mountainPrefab;
     [SerializeField] private GoalTile goalPrefab;
