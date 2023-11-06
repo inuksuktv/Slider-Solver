@@ -71,7 +71,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // Search in the direction of the move until a tile that blocks movement is found.
-        int maxMove = Mathf.Max(GridManager.Instance.width + 1, GridManager.Instance.height + 1);
+        int maxMove = Mathf.Max(GridManager.Instance.boardWidth + 1, GridManager.Instance.boardHeight + 1);
         for (int i = 1; i < maxMove; i++) {
             Tile nextTile = GridManager.Instance.GetTileAtPosition(origin + moveDirection * i);
             if (nextTile == null || nextTile.BlocksMove) {
