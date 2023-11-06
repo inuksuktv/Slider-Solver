@@ -468,6 +468,7 @@ MonoBehaviour:
   slidePrefab: {fileID: 2222053095397704783, guid: 87a0ef049cf92d142bb7e547adb6b6e4, type: 3}
   mountainPrefab: {fileID: 1154256661188788847, guid: 14cc6b2e30ec1e94d871449b7eb68b29, type: 3}
   goalPrefab: {fileID: 2129644373845940138, guid: ce90d8b4a573f7946b95fa330ee4169c, type: 3}
+  boxPrefab: {fileID: 3932390550724563962, guid: 340db93cecfe9614faf89514808421d8, type: 3}
   player: {fileID: 3762307710835151352, guid: e7b094b81cbe0024ebc61460cca4a74b, type: 3}
 --- !u!4 &1655338350
 Transform:

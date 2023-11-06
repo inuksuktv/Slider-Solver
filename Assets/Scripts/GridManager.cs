@@ -12,6 +12,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private SlideTile slidePrefab;
     [SerializeField] private MountainTile mountainPrefab;
     [SerializeField] private GoalTile goalPrefab;
+    [SerializeField] private GameObject boxPrefab;
     [SerializeField] private GameObject player;
 
     private enum GoalQuadrant
@@ -37,6 +38,8 @@ public class GridManager : MonoBehaviour
 
         GenerateTiles();
         Instantiate(player);
+        // Move the camera over the center of the board.
+        mainCamera.position = new Vector3((float)width / 2 - 0.5f, 15f, (float)height / 2 - 0.5f);
     }
 
     private void GenerateTiles()
@@ -56,7 +59,7 @@ public class GridManager : MonoBehaviour
                 bool isOffset = (x + z) % 2 == 1;
                 slideTile.InitializeColor(isOffset);
 
-                slideTile.BoxUpdate();
+                slideTile.BoxDetection();
                 tiles.Add(GetClosestCell(tilePosition), slideTile);
             }
         }
@@ -133,13 +136,27 @@ public class GridManager : MonoBehaviour
 
         tiles.Add(GetClosestCell(tilePosition), goalTile);
 
-        // Move the camera over the center of the board.
-        mainCamera.position = new Vector3((float)width / 2 - 0.5f, 15f, (float)height / 2 - 0.5f);
+        // Spawn boxes.
+        for (int i = 0; i < boxCount; i++) {
+            int x = Random.Range(0, width);
+            int z = Random.Range(0, height);
+            Vector3Int newBoxPosition = new(x, 0, z);
+            bool isNewLocation = true;
+            foreach (GameObject box in boxes) {
+                if (box.transform.position == newBoxPosition) {
+                    isNewLocation = false;
+                    break;
+                }
+            }
+            if (isNewLocation) {
+                boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity));
+            }
+        }
 
         // Update BlocksMove for each tile with a box.
         foreach (GameObject box in boxes) {
             SlideTile tile = (SlideTile)GetTileAtPosition(GetClosestCell(box.transform.position));
-            tile.BoxUpdate();
+            tile.BoxDetection(box);
         }
     }
 

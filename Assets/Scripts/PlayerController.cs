@@ -53,14 +53,14 @@ public class PlayerController : MonoBehaviour
         Vector3Int moveDirection = Vector3Int.forward;
         Vector3Int origin = GridManager.Instance.GetClosestCell(transform.position);
         Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + moveDirection);
-        GameObject pushedBox;
+        Transform unit = transform;
 
         // If player is pushing a box, move the box instead.
         foreach (GameObject box in GridManager.Instance.boxes) {
             if (targetCell == GridManager.Instance.GetClosestCell(box.transform.position)) {
                 origin = GridManager.Instance.GetClosestCell(box.transform.position);
                 targetCell = GridManager.Instance.GetClosestCell(box.transform.position + moveDirection);
-                pushedBox = box;
+                unit = box.transform;
             }
         }
 
@@ -81,7 +81,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // Send the move command.
-        MoveCommand command = new(origin, targetCell, transform);
+        MoveCommand command = new(origin, targetCell, unit);
         CommandManager.Instance.AddCommand(command);
     }
 

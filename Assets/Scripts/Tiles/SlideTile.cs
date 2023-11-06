@@ -6,12 +6,21 @@ public class SlideTile : Tile
 {
     [SerializeField] private Color baseColor, offsetColor;
 
-    public void BoxUpdate()
+    public void BoxDetection(GameObject box)
+    {
+        BlocksMove = false;
+        if (GridManager.Instance.GetClosestCell(box.transform.position) == GridManager.Instance.GetClosestCell(transform.position)) {
+            BlocksMove = true;
+        }
+    }
+
+    public void BoxDetection()
     {
         BlocksMove = false;
         foreach (GameObject box in GridManager.Instance.boxes) {
             if (GridManager.Instance.GetClosestCell(box.transform.position) == GridManager.Instance.GetClosestCell(transform.position)) {
                 BlocksMove = true;
+                break;
             }
         }
     }
