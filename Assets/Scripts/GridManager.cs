@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 
 public class GridManager : MonoBehaviour
 {
@@ -33,7 +32,10 @@ public class GridManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(this); }
         else { Instance = this; }
+    }
 
+    private void Start()
+    {
         mainCamera = GameObject.Find("Main Camera").transform;
         Grid = GetComponent<Grid>();
 
@@ -59,11 +61,28 @@ public class GridManager : MonoBehaviour
         unit.position = target;
     }
 
+    public void UpdateTiles()
+    {
+        foreach (var tile in tiles) {
+            if (tile.Value.TryGetComponent(out SlideTile slideTile)) {
+                slideTile.BlocksMove = false;
+            }
+        }
+        foreach (GameObject box in boxes) {
+            Tile boxTile = GetTileAtPosition(GetClosestCell(box.transform.position));
+            if (boxTile != null) {
+                boxTile.BlocksMove = true;
+            }
+
+        }
+    }
+
     private void GeneratePlayer()
     {
         Tile[] openTiles = new Tile[tiles.Count];
         Vector3 position = new();
 
+        // Load into the array all tiles that are open. Boxes have already been placed and Slide Tiles updated.
         int i = 0;
         foreach (var tile in tiles) {
             if (tile.Value.TryGetComponent<Tile>(out var tileScript)) {
@@ -79,6 +98,7 @@ public class GridManager : MonoBehaviour
         foreach (Tile tile in openTiles) {
             if (tile != null) {
                 position = tile.transform.position;
+                break;
             }
         }
         Instantiate(player, position, Quaternion.identity);
@@ -90,10 +110,12 @@ public class GridManager : MonoBehaviour
             int x = Random.Range(0, boardWidth);
             int z = Random.Range(0, boardHeight);
             Vector3Int newBoxPosition = new(x, 0, z);
+
             bool isNewLocation = true;
             foreach (GameObject box in boxes) {
                 if (box.transform.position == newBoxPosition) {
                     isNewLocation = false;
+                    Debug.Log("Box location is taken, so instantiation was skipped.");
                     break;
                 }
             }
@@ -101,62 +123,68 @@ public class GridManager : MonoBehaviour
                 boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity));
             }
         }
-
-        // Update BlocksMove for each tile with a box.
-        foreach (GameObject box in boxes) {
-            SlideTile tile = (SlideTile)GetTileAtPosition(GetClosestCell(box.transform.position));
-            tile.BoxDetection(box);
-        }
+        UpdateTiles();
     }
 
     private void GenerateGoalTile()
     {
-        Vector3 tilePosition;
-
         // Select the goal tile.
-        tilePosition = new();
+        Vector3 goalPosition = new();
+        Vector3 wallPosition = new();
         GoalQuadrant goalQuadrant = (GoalQuadrant)Random.Range(0, 4);
         switch (goalQuadrant) {
             case GoalQuadrant.Bottom:
-                tilePosition.z = -1;
-                tilePosition.x = Random.Range(0, boardWidth);
+                goalPosition.z = -1;
+                goalPosition.x = Random.Range(0, boardWidth);
+                wallPosition.z = -2;
+                wallPosition.x = goalPosition.x;
                 break;
             case GoalQuadrant.Right:
-                tilePosition.x = boardWidth;
-                tilePosition.z = Random.Range(0, boardHeight);
+                goalPosition.x = boardWidth;
+                goalPosition.z = Random.Range(0, boardHeight);
+                wallPosition.x = boardWidth + 1;
+                wallPosition.z = goalPosition.z;
                 break;
             case GoalQuadrant.Top:
-                tilePosition.z = boardHeight;
-                tilePosition.x = Random.Range(0, boardWidth);
+                goalPosition.z = boardHeight;
+                goalPosition.x = Random.Range(0, boardWidth);
+                wallPosition.z = boardHeight + 1;
+                wallPosition.x = goalPosition.x;
                 break;
             case GoalQuadrant.Left:
-                tilePosition.x = -1;
-                tilePosition.z = Random.Range(0, boardHeight);
+                goalPosition.x = -1;
+                goalPosition.z = Random.Range(0, boardHeight);
+                wallPosition.x = -2;
+                wallPosition.z = goalPosition.z;
                 break;
         }
 
         // Remove the wall tile and place a goal tile at the selected position.
-        tiles.Remove(GetClosestCell(tilePosition));
-        GameObject wall = transform.Find($"Tile {tilePosition.x} {tilePosition.z}").gameObject;
+        tiles.Remove(GetClosestCell(goalPosition));
+        GameObject wall = transform.Find($"Tile {goalPosition.x} {goalPosition.z}").gameObject;
         Destroy(wall);
 
-        tilePosition.y = tileOffset + goalPrefab.transform.localScale.y / 2;
-        Tile goalTile = Instantiate(goalPrefab, tilePosition, Quaternion.identity);
-        goalTile.name = $"Tile {tilePosition.x} {tilePosition.z}";
+        goalPosition.y = tileOffset + goalPrefab.transform.localScale.y / 2;
+        Tile goalTile = Instantiate(goalPrefab, goalPosition, Quaternion.identity);
+        goalTile.name = $"Tile {goalPosition.x} {goalPosition.z}";
         goalTile.transform.parent = transform;
 
-        tiles.Add(GetClosestCell(tilePosition), goalTile);
+        wallPosition.y = tileOffset + mountainPrefab.transform.localScale.y / 2;
+        Tile wallTile = Instantiate(mountainPrefab, wallPosition, Quaternion.identity);
+        wallTile.name = $"Tile {wallPosition.x} {wallPosition.z}";
+        wallTile.transform.parent = transform;
+
+        tiles.Add(GetClosestCell(goalPosition), goalTile);
+        tiles.Add(GetClosestCell(wallPosition), wallTile);
     }
 
     private void GenerateSlideTiles()
     {
-        Vector3 tilePosition;
-        SlideTile slideTile;
         for (int z = 0; z < boardHeight; z++) {
             for (int x = 0; x < boardWidth; x++) {
                 //Create each tile and name it.
-                tilePosition = new(x, tileOffset + slidePrefab.transform.localScale.y / 2, z);
-                slideTile = Instantiate(slidePrefab, tilePosition, Quaternion.identity);
+                Vector3 tilePosition = new(x, tileOffset + slidePrefab.transform.localScale.y / 2, z);
+                SlideTile slideTile = Instantiate(slidePrefab, tilePosition, Quaternion.identity);
                 slideTile.name = $"Tile {x} {z}";
                 slideTile.transform.parent = transform;
 
@@ -164,10 +192,10 @@ public class GridManager : MonoBehaviour
                 bool isOffset = (x + z) % 2 == 1;
                 slideTile.InitializeColor(isOffset);
 
-                slideTile.BoxDetection();
                 tiles.Add(GetClosestCell(tilePosition), slideTile);
             }
         }
+        UpdateTiles();
     }
 
     private void GenerateWalls()
@@ -224,7 +252,7 @@ public class GridManager : MonoBehaviour
         mainCamera.position = new Vector3((float)boardWidth / 2 - 0.5f, 15f, (float)boardHeight / 2 - 0.5f);
     }
 
-    private Tile[] RandomizeWithFisherYates(Tile[] array)
+        private Tile[] RandomizeWithFisherYates(Tile[] array)
     {
         int count = array.Length;
 
