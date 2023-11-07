@@ -62,6 +62,15 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Back"",
+                    ""type"": ""Button"",
+                    ""id"": ""11e53711-c264-4728-a656-b1fe1ab46e65"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -152,6 +161,17 @@ public partial class @Controls: IInputActionCollection2, IDisposable
                     ""action"": ""Right"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f25246c2-f4fc-4a29-9238-255e08c99ebb"",
+                    ""path"": ""<Keyboard>/backspace"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Back"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -164,6 +184,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         m_Main_Down = m_Main.FindAction("Down", throwIfNotFound: true);
         m_Main_Left = m_Main.FindAction("Left", throwIfNotFound: true);
         m_Main_Right = m_Main.FindAction("Right", throwIfNotFound: true);
+        m_Main_Back = m_Main.FindAction("Back", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -229,6 +250,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Main_Down;
     private readonly InputAction m_Main_Left;
     private readonly InputAction m_Main_Right;
+    private readonly InputAction m_Main_Back;
     public struct MainActions
     {
         private @Controls m_Wrapper;
@@ -237,6 +259,7 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         public InputAction @Down => m_Wrapper.m_Main_Down;
         public InputAction @Left => m_Wrapper.m_Main_Left;
         public InputAction @Right => m_Wrapper.m_Main_Right;
+        public InputAction @Back => m_Wrapper.m_Main_Back;
         public InputActionMap Get() { return m_Wrapper.m_Main; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -258,6 +281,9 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @Right.started += instance.OnRight;
             @Right.performed += instance.OnRight;
             @Right.canceled += instance.OnRight;
+            @Back.started += instance.OnBack;
+            @Back.performed += instance.OnBack;
+            @Back.canceled += instance.OnBack;
         }
 
         private void UnregisterCallbacks(IMainActions instance)
@@ -274,6 +300,9 @@ public partial class @Controls: IInputActionCollection2, IDisposable
             @Right.started -= instance.OnRight;
             @Right.performed -= instance.OnRight;
             @Right.canceled -= instance.OnRight;
+            @Back.started -= instance.OnBack;
+            @Back.performed -= instance.OnBack;
+            @Back.canceled -= instance.OnBack;
         }
 
         public void RemoveCallbacks(IMainActions instance)
@@ -297,5 +326,6 @@ public partial class @Controls: IInputActionCollection2, IDisposable
         void OnDown(InputAction.CallbackContext context);
         void OnLeft(InputAction.CallbackContext context);
         void OnRight(InputAction.CallbackContext context);
+        void OnBack(InputAction.CallbackContext context);
     }
 }

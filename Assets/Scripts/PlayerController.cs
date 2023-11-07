@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
     private InputAction downAction;
     private InputAction leftAction;
     private InputAction rightAction;
+    private InputAction backAction;
 
     private Vector3Int goalTilePosition;
     private Vector3Int moveDirection, currentCell, targetCell;
@@ -22,6 +23,7 @@ public class PlayerController : MonoBehaviour
         downAction = playerInput.actions["Down"];
         leftAction = playerInput.actions["Left"];
         rightAction = playerInput.actions["Right"];
+        backAction = playerInput.actions["Back"];
     }
 
     private void OnEnable()
@@ -30,11 +32,13 @@ public class PlayerController : MonoBehaviour
         downAction.performed += Down;
         leftAction.performed += Left;
         rightAction.performed += Right;
+        backAction.performed += Back;
 
         upAction.Enable();
         downAction.Enable();
         leftAction.Enable();
         rightAction.Enable();
+        backAction.Enable();
     }
 
     private void OnDisable()
@@ -43,11 +47,13 @@ public class PlayerController : MonoBehaviour
         downAction.performed -= Down;
         leftAction.performed -= Left;
         rightAction.performed -= Right;
+        backAction.performed += Back;
 
         upAction.Disable();
         downAction.Disable();
         leftAction.Disable();
         rightAction.Disable();
+        backAction.Disable();
     }
 
     private void Up(InputAction.CallbackContext context)
@@ -120,6 +126,11 @@ public class PlayerController : MonoBehaviour
 
         MoveCommand command = new(currentCell, targetCell, unit);
         CommandManager.Instance.AddCommand(command);
+    }
+
+    private void Back(InputAction.CallbackContext context)
+    {
+        CommandManager.Instance.Undo();
     }
 
     private void Start()

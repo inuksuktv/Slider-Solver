@@ -27,6 +27,7 @@ public class MoveCommand : CommandManager.ICommand
 
     public void Undo()
     {
-
+        GridManager.Instance.MoveUnit(myUnit, myFrom);
+        GridManager.Instance.UpdateTiles();
     }
 }
