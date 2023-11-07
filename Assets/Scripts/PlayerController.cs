@@ -11,7 +11,9 @@ public class PlayerController : MonoBehaviour
     private InputAction leftAction;
     private InputAction rightAction;
 
-    private Tile goalTile;
+    private Vector3Int goalTilePosition;
+    private Vector3Int moveDirection, currentCell, targetCell;
+    private Transform unit;
 
     private void Awake()
     {
@@ -50,74 +52,114 @@ public class PlayerController : MonoBehaviour
 
     private void Up(InputAction.CallbackContext context)
     {
-        Vector3Int moveDirection = Vector3Int.forward;
-        Vector3Int origin = GridManager.Instance.GetClosestCell(transform.position);
-        Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + moveDirection);
-        Transform unit = transform;
+        moveDirection = Vector3Int.forward;
 
-        // If player is pushing a box, move the box instead.
-        foreach (GameObject box in GridManager.Instance.boxes) {
-            if (targetCell == GridManager.Instance.GetClosestCell(box.transform.position)) {
-                origin = GridManager.Instance.GetClosestCell(box.transform.position);
-                targetCell = GridManager.Instance.GetClosestCell(box.transform.position + moveDirection);
-                unit = box.transform;
-            }
-        }
+        GetActiveUnit();
 
-        // Check if the move is illegal.
+        // Return without effect if the move is illegal.
         Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
-        if (testTile == null || testTile.BlocksMove) { 
-            return; 
+        if (testTile == null || testTile.BlocksMove) {
+            return;
         }
 
-        // Search in the direction of the move until a tile that blocks movement is found.
-        int maxMove = Mathf.Max(GridManager.Instance.width + 1, GridManager.Instance.height + 1);
-        for (int i = 1; i < maxMove; i++) {
-            Tile nextTile = GridManager.Instance.GetTileAtPosition(origin + moveDirection * i);
-            if (nextTile == null || nextTile.BlocksMove) {
-                targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - moveDirection);
-                break;
-            }
-        }
+        FindDestination();
 
-        // Send the move command.
-        MoveCommand command = new(origin, targetCell, unit);
+        MoveCommand command = new(currentCell, targetCell, unit);
         CommandManager.Instance.AddCommand(command);
     }
 
     private void Down(InputAction.CallbackContext context)
     {
-        Vector3Int cellPosition = GridManager.Instance.GetClosestCell(transform.position);
-        Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + Vector3Int.back);
-        MoveCommand command = new(cellPosition, targetCell, transform);
+        moveDirection = Vector3Int.back;
+
+        GetActiveUnit();
+
+        // Return without effect if the move is illegal.
+        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
+        if (testTile == null || testTile.BlocksMove) {
+            return;
+        }
+
+        FindDestination();
+
+        MoveCommand command = new(currentCell, targetCell, unit);
         CommandManager.Instance.AddCommand(command);
     }
 
     private void Left(InputAction.CallbackContext context)
     {
-        Vector3Int cellPosition = GridManager.Instance.GetClosestCell(transform.position);
-        Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + Vector3Int.left);
-        MoveCommand command = new(cellPosition, targetCell, transform);
+        moveDirection = Vector3Int.left;
+
+        GetActiveUnit();
+
+        // Return without effect if the move is illegal.
+        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
+        if (testTile == null || testTile.BlocksMove) {
+            return;
+        }
+
+        FindDestination();
+
+        MoveCommand command = new(currentCell, targetCell, unit);
         CommandManager.Instance.AddCommand(command);
     }
 
     private void Right(InputAction.CallbackContext context)
     {
-        Vector3Int cellPosition = GridManager.Instance.GetClosestCell(transform.position);
-        Vector3Int targetCell = GridManager.Instance.GetClosestCell(transform.position + Vector3Int.right);
-        MoveCommand command = new(cellPosition, targetCell, transform);
+        moveDirection = Vector3Int.right;
+
+        GetActiveUnit();
+
+        // Return without effect if the move is illegal.
+        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
+        if (testTile == null || testTile.BlocksMove) {
+            return;
+        }
+
+        FindDestination();
+
+        MoveCommand command = new(currentCell, targetCell, unit);
         CommandManager.Instance.AddCommand(command);
     }
 
     private void Start()
     {
-        goalTile = FindFirstObjectByType<GoalTile>();
+        goalTilePosition = GridManager.Instance.GetClosestCell(FindFirstObjectByType<GoalTile>().transform.position);
     }
 
     private void Update()
     {
-        if (GridManager.Instance.GetClosestCell(transform.position) == GridManager.Instance.GetClosestCell(goalTile.transform.position)) {
+        if (GridManager.Instance.GetClosestCell(transform.position) == goalTilePosition) {
             Debug.Log("You win the game!");
+        }
+    }
+
+    private void GetActiveUnit()
+    {
+        currentCell = GridManager.Instance.GetClosestCell(transform.position);
+        targetCell = GridManager.Instance.GetClosestCell(transform.position + moveDirection);
+        unit = transform;
+
+        // If the player moved into a box, make the box the active unit. Otherwise the player is the active unit.
+        foreach (GameObject box in GridManager.Instance.boxes) {
+            if (targetCell == GridManager.Instance.GetClosestCell(box.transform.position)) {
+                currentCell = GridManager.Instance.GetClosestCell(box.transform.position);
+                targetCell = GridManager.Instance.GetClosestCell(box.transform.position + moveDirection);
+                unit = box.transform;
+            }
+        }
+    }
+
+    private void FindDestination()
+    {
+        // Search in the direction of the move until a tile that blocks movement is found.
+        int maxMove = Mathf.Max(GridManager.Instance.boardWidth + 1, GridManager.Instance.boardHeight + 1);
+        for (int i = 1; i < maxMove; i++) {
+            Tile nextTile = GridManager.Instance.GetTileAtPosition(currentCell + moveDirection * i);
+            if (nextTile.BlocksMove) {
+                targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - moveDirection);
+                break;
+            }
         }
     }
 }

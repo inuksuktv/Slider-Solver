@@ -431,7 +431,7 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
---- !u!1 &1655338348
+--- !u!1 &1604034152
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -439,9 +439,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1655338350}
-  - component: {fileID: 1655338349}
-  - component: {fileID: 1655338351}
+  - component: {fileID: 1604034155}
+  - component: {fileID: 1604034154}
+  - component: {fileID: 1604034153}
   m_Layer: 0
   m_Name: GridManager
   m_TagString: Untagged
@@ -449,34 +449,46 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1655338349
+--- !u!114 &1604034153
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1655338348}
+  m_GameObject: {fileID: 1604034152}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0d46c8c3279b15b4e9ad97e58c9a3492, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   boxes: []
-  width: 8
-  height: 8
-  boxCount: 2
+  boardHeight: 8
+  boardWidth: 8
+  boxCount: 7
   slidePrefab: {fileID: 2222053095397704783, guid: 87a0ef049cf92d142bb7e547adb6b6e4, type: 3}
   mountainPrefab: {fileID: 1154256661188788847, guid: 14cc6b2e30ec1e94d871449b7eb68b29, type: 3}
   goalPrefab: {fileID: 2129644373845940138, guid: ce90d8b4a573f7946b95fa330ee4169c, type: 3}
   boxPrefab: {fileID: 3932390550724563962, guid: 340db93cecfe9614faf89514808421d8, type: 3}
   player: {fileID: 3762307710835151352, guid: e7b094b81cbe0024ebc61460cca4a74b, type: 3}
---- !u!4 &1655338350
+--- !u!156049354 &1604034154
+Grid:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1604034152}
+  m_Enabled: 1
+  m_CellSize: {x: 1, y: 0, z: 1}
+  m_CellGap: {x: 0, y: 0, z: 0}
+  m_CellLayout: 0
+  m_CellSwizzle: 0
+--- !u!4 &1604034155
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1655338348}
+  m_GameObject: {fileID: 1604034152}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -485,24 +497,12 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!156049354 &1655338351
-Grid:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1655338348}
-  m_Enabled: 1
-  m_CellSize: {x: 1, y: 0, z: 1}
-  m_CellGap: {x: 0, y: 0, z: 0}
-  m_CellLayout: 0
-  m_CellSwizzle: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 963194228}
   - {fileID: 705507995}
-  - {fileID: 1655338350}
   - {fileID: 1580818611}
   - {fileID: 1043173963}
+  - {fileID: 1604034155}

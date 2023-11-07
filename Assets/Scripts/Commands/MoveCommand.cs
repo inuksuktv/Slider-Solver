@@ -18,6 +18,11 @@ public class MoveCommand : CommandManager.ICommand
     public void Execute()
     {
         GridManager.Instance.MoveUnit(myUnit, myTo);
+
+        // Send an async task to the animation system?
+
+        // Once it's done, update the tiles in case we moved boxes.
+        GridManager.Instance.UpdateTiles();
     }
 
     public void Undo()

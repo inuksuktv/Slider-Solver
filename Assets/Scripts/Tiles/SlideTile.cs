@@ -6,13 +6,6 @@ public class SlideTile : Tile
 {
     [SerializeField] private Color baseColor, offsetColor;
 
-    public void BoxDetection(GameObject box)
-    {
-        BlocksMove = false;
-        if (GridManager.Instance.GetClosestCell(box.transform.position) == GridManager.Instance.GetClosestCell(transform.position)) {
-            BlocksMove = true;
-        }
-    }
 
     public void BoxDetection()
     {
