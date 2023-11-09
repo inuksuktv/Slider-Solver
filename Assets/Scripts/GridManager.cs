@@ -77,33 +77,6 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void GeneratePlayer()
-    {
-        Tile[] openTiles = new Tile[tiles.Count];
-        Vector3 position = new();
-
-        // Load into the array all tiles that are open. Boxes have already been placed and Slide Tiles updated.
-        int i = 0;
-        foreach (var tile in tiles) {
-            if (tile.Value.TryGetComponent<Tile>(out var tileScript)) {
-                if (!tileScript.BlocksMove) {
-                    openTiles[i] = tileScript;
-                }
-            }
-            i++;
-        }
-
-        RandomizeWithFisherYates(openTiles);
-
-        foreach (Tile tile in openTiles) {
-            if (tile != null) {
-                position = tile.transform.position;
-                break;
-            }
-        }
-        Instantiate(player, position, Quaternion.identity);
-    }
-
     private void GenerateBoxes()
     {
         for (int i = 0; i < boxCount; i++) {
@@ -188,6 +161,32 @@ public class GridManager : MonoBehaviour
             tiles.Remove(GetClosestCell(tilePosition));
             Destroy(tile.gameObject);
         }
+    }
+
+    private void GeneratePlayer()
+    {
+        Tile[] openTiles = new Tile[tiles.Count];
+        Vector3 position = new();
+
+        // Load into the array all tiles that are open. Boxes have already been placed and Slide Tiles updated.
+        int i = 0;
+        foreach (var tile in tiles) {
+            Tile script = tile.Value;
+            if (script.gameObject.CompareTag("Slide") && !tile.Value.BlocksMove) {
+                openTiles[i] = tile.Value;
+            }
+            i++;
+        }
+
+        RandomizeWithFisherYates(openTiles);
+
+        foreach (Tile tile in openTiles) {
+            if (tile != null) {
+                position = tile.transform.position;
+                break;
+            }
+        }
+        Instantiate(player, position, Quaternion.identity);
     }
 
     private void GenerateSlideTiles()
