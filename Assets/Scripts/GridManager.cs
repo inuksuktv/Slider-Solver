@@ -6,7 +6,7 @@ public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
     public Grid Grid { get; private set; }
-    public List<GameObject> boxes = new();
+    public List<Transform> boxes = new();
 
     public int boardHeight, boardWidth, boxCount;
     [SerializeField] private SlideTile slidePrefab;
@@ -68,8 +68,8 @@ public class GridManager : MonoBehaviour
                 slideTile.BlocksMove = false;
             }
         }
-        foreach (GameObject box in boxes) {
-            Tile boxTile = GetTileAtPosition(GetClosestCell(box.transform.position));
+        foreach (Transform box in boxes) {
+            Tile boxTile = GetTileAtPosition(GetClosestCell(box.position));
             if (boxTile != null) {
                 boxTile.BlocksMove = true;
             }
@@ -85,15 +85,15 @@ public class GridManager : MonoBehaviour
             Vector3Int newBoxPosition = new(x, 0, z);
 
             bool isNewLocation = true;
-            foreach (GameObject box in boxes) {
-                if (box.transform.position == newBoxPosition) {
+            foreach (Transform box in boxes) {
+                if (GetClosestCell(box.position) == newBoxPosition) {
                     isNewLocation = false;
                     Debug.Log("Box location is taken, so instantiation was skipped.");
                     break;
                 }
             }
             if (isNewLocation) {
-                boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity));
+                boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity).transform);
             }
         }
         UpdateTiles();

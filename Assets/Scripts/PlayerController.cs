@@ -13,8 +13,8 @@ public class PlayerController : MonoBehaviour
     private InputAction backAction;
 
     private Vector3Int goalTilePosition;
-    private Vector3Int moveDirection, currentCell, targetCell;
-    private Transform unit;
+    public Vector3Int currentCell, targetCell;
+    public Transform unit;
 
     private void Awake()
     {
@@ -58,74 +58,35 @@ public class PlayerController : MonoBehaviour
 
     private void Up(InputAction.CallbackContext context)
     {
-        moveDirection = Vector3Int.forward;
-
-        GetActiveUnit();
-
-        // Return without effect if the move is illegal.
-        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
-        if (testTile == null || testTile.BlocksMove) {
-            return;
+        var command = MoveProcessing(Vector3Int.forward);
+        if (command != null) {
+            CommandManager.Instance.AddCommand(command);
         }
-
-        FindDestination();
-
-        MoveCommand command = new(currentCell, targetCell, unit);
-        CommandManager.Instance.AddCommand(command);
     }
 
     private void Down(InputAction.CallbackContext context)
     {
-        moveDirection = Vector3Int.back;
-
-        GetActiveUnit();
-
-        // Return without effect if the move is illegal.
-        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
-        if (testTile == null || testTile.BlocksMove) {
-            return;
+        var command = MoveProcessing(Vector3Int.back);
+        if (command != null) {
+            CommandManager.Instance.AddCommand(command);
         }
-
-        FindDestination();
-
-        MoveCommand command = new(currentCell, targetCell, unit);
-        CommandManager.Instance.AddCommand(command);
     }
 
     private void Left(InputAction.CallbackContext context)
     {
-        moveDirection = Vector3Int.left;
-
-        GetActiveUnit();
-
-        // Return without effect if the move is illegal.
-        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
-        if (testTile == null || testTile.BlocksMove) {
-            return;
+        var command = MoveProcessing(Vector3Int.left);
+        if (command != null) {
+            CommandManager.Instance.AddCommand(command);
         }
-
-        FindDestination();
-
-        MoveCommand command = new(currentCell, targetCell, unit);
-        CommandManager.Instance.AddCommand(command);
     }
 
     private void Right(InputAction.CallbackContext context)
     {
-        moveDirection = Vector3Int.right;
-
-        GetActiveUnit();
-
-        // Return without effect if the move is illegal.
-        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
-        if (testTile == null || testTile.BlocksMove) {
-            return;
+        var command = MoveProcessing(Vector3Int.right);
+        if (command != null) {
+            CommandManager.Instance.AddCommand(command);
         }
 
-        FindDestination();
-
-        MoveCommand command = new(currentCell, targetCell, unit);
-        CommandManager.Instance.AddCommand(command);
     }
 
     private void Back(InputAction.CallbackContext context)
@@ -144,33 +105,48 @@ public class PlayerController : MonoBehaviour
             Debug.Log("You win the game!");
         }
     }
-
-    private void GetActiveUnit()
-    {
-        currentCell = GridManager.Instance.GetClosestCell(transform.position);
-        targetCell = GridManager.Instance.GetClosestCell(transform.position + moveDirection);
-        unit = transform;
-
-        // If the player moved into a box, make the box the active unit. Otherwise the player is the active unit.
-        foreach (GameObject box in GridManager.Instance.boxes) {
-            if (targetCell == GridManager.Instance.GetClosestCell(box.transform.position)) {
-                currentCell = GridManager.Instance.GetClosestCell(box.transform.position);
-                targetCell = GridManager.Instance.GetClosestCell(box.transform.position + moveDirection);
-                unit = box.transform;
-            }
-        }
-    }
-
-    private void FindDestination()
+    public void FindDestination(Vector3Int direction)
     {
         // Search in the direction of the move until a tile that blocks movement is found.
         int maxMove = Mathf.Max(GridManager.Instance.boardWidth + 1, GridManager.Instance.boardHeight + 1);
         for (int i = 1; i < maxMove + 1; i++) {
-            Tile nextTile = GridManager.Instance.GetTileAtPosition(currentCell + moveDirection * i);
+            Tile nextTile = GridManager.Instance.GetTileAtPosition(currentCell + direction * i);
             if (nextTile.BlocksMove) {
-                targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - moveDirection);
+                targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - direction);
                 break;
             }
         }
+    }
+
+    public void GetActiveUnit(Vector3Int direction)
+    {
+        currentCell = GridManager.Instance.GetClosestCell(transform.position);
+        targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
+        unit = transform;
+
+        // If the player moved into a box, make the box the active unit. Otherwise the player is the active unit.
+        foreach (Transform box in GridManager.Instance.boxes) {
+            if (targetCell == GridManager.Instance.GetClosestCell(box.position)) {
+                currentCell = targetCell;
+                targetCell = GridManager.Instance.GetClosestCell(box.position) + direction;
+                unit = box;
+            }
+        }
+    }
+
+    public MoveCommand MoveProcessing(Vector3Int direction)
+    {
+        GetActiveUnit(direction);
+
+        // Return without effect if the move is illegal.
+        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
+        if (testTile == null || testTile.BlocksMove) {
+            return null;
+        }
+
+        FindDestination(direction);
+
+        MoveCommand command = new(currentCell, targetCell, unit);
+        return command;
     }
 }
