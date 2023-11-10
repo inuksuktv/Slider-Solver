@@ -5,23 +5,24 @@ using UnityEngine;
 
 public class Vertex
 {
-    public LinkedList<MoveCommand> myMoves;
+    public LinkedList<MoveCommand> myMoves = new();
     public Vertex myParent;
     public List<Vertex> myNeighbors = new();
-    public Transform myPlayer { get; private set; }
+    public Vector3Int myPlayerLocation { get; private set; }
     public List<Transform> myBoxes { get; private set; }
     public bool[,] myArray { get; private set; }
+    public int searchIndex;
 
-    public Vertex(Transform player, List<Transform> boxes)
+    public Vertex(Vector3Int position, List<Transform> boxes)
     {
-        myPlayer = player;
+        myPlayerLocation = position;
         myBoxes = boxes;
         myArray = EncodeBoxArray(boxes);
     }
 
-    public (Transform, bool[,]) GetTuple()
+    public (Vector3Int, bool[,]) GetTuple()
     {
-        (Transform, bool[,]) tuple = (myPlayer, myArray);
+        (Vector3Int, bool[,]) tuple = (myPlayerLocation, myArray);
         return tuple;
     }
 

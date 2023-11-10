@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 4730655368433347129}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -119,6 +119,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c7eef8137defe74e9bbd6b287b80400, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentCell: {x: 0, y: 0, z: 0}
+  targetCell: {x: 0, y: 0, z: 0}
+  unit: {fileID: 0}
 --- !u!114 &4730655368433347129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -160,6 +163,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 23be3652-a9f8-4e24-8458-fcf658dc4745
     m_ActionName: Main/Right[/Keyboard/d,/Keyboard/rightArrow]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 11e53711-c264-4728-a656-b1fe1ab46e65
+    m_ActionName: Main/Back[/Keyboard/backspace]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Main

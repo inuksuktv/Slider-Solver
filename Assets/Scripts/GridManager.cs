@@ -6,14 +6,11 @@ public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
     public Grid Grid { get; private set; }
+    public Transform Goal { get; private set; }
+    public Transform Player { get; private set; }
     public List<Transform> boxes = new();
-
-    public int boardHeight, boardWidth, boxCount;
-    [SerializeField] private SlideTile slidePrefab;
-    [SerializeField] private MountainTile mountainPrefab;
-    [SerializeField] private GoalTile goalPrefab;
-    [SerializeField] private GameObject boxPrefab;
-    [SerializeField] private GameObject player;
+    public Vector3Int startLocation = new();
+    public List<Vector3Int> boxLocations = new();
 
     private enum GoalWall
     {
@@ -22,6 +19,13 @@ public class GridManager : MonoBehaviour
         Top,
         Left
     }
+
+    public int boardHeight, boardWidth, boxCount;
+    [SerializeField] private SlideTile slidePrefab;
+    [SerializeField] private MountainTile mountainPrefab;
+    [SerializeField] private GoalTile goalPrefab;
+    [SerializeField] private GameObject boxPrefab;
+    [SerializeField] private GameObject playerPrefab;
 
     private Transform mainCamera;
     private Dictionary<Vector3Int, Tile> tiles = new();
@@ -42,6 +46,20 @@ public class GridManager : MonoBehaviour
         PrepareGameboard();
     }
 
+    public void DestroyGameboard()
+    {
+        for (int i = 0; i < transform.childCount; i++) {
+            Destroy(transform.GetChild(i).gameObject);
+        }
+        foreach (Transform box in boxes) {
+            Destroy(box.gameObject);
+        }
+        Destroy(Player.gameObject);
+        tiles.Clear();
+        boxes.Clear();
+        boxLocations.Clear();
+    }
+
     public Tile GetTileAtPosition(Vector3Int position)
     {
         if (tiles.TryGetValue(position, out var tile)) {
@@ -59,6 +77,17 @@ public class GridManager : MonoBehaviour
     public void MoveUnit(Transform unit, Vector3Int target, bool animate = true)
     {
         unit.position = target;
+    }
+
+    public void PrepareGameboard()
+    {
+        GenerateSlideTiles();
+        GenerateWalls();
+        GenerateGoalTile();
+        GenerateBoxes();
+        GeneratePlayer();
+        // Move the camera over the center of the board.
+        mainCamera.position = new Vector3((float)boardWidth / 2 - 0.5f, 15f, (float)boardHeight / 2 - 0.5f);
     }
 
     public void UpdateTiles()
@@ -94,6 +123,7 @@ public class GridManager : MonoBehaviour
             }
             if (isNewLocation) {
                 boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity).transform);
+                boxLocations.Add(newBoxPosition);
             }
         }
         UpdateTiles();
@@ -105,6 +135,7 @@ public class GridManager : MonoBehaviour
         Vector3 wallPosition = new();
 
         // Choose the goal location.
+
         GoalWall goalWall = (GoalWall)Random.Range(0, 4);
         switch (goalWall) {
             case GoalWall.Bottom:
@@ -134,11 +165,11 @@ public class GridManager : MonoBehaviour
         }
 
         DestroyTile(goalPosition);
-        CreateTile(goalPrefab, goalPosition);
+        Goal = CreateTile(goalPrefab, goalPosition);
         CreateTile(mountainPrefab, wallPosition);
     }
 
-    private void CreateTile(Tile selectedTile, Vector3 position)
+    private Transform CreateTile(Tile selectedTile, Vector3 position)
     {
         position.y = tileOffset + selectedTile.transform.localScale.y / 2;
 
@@ -152,6 +183,7 @@ public class GridManager : MonoBehaviour
             bool isOffset = (position.x + position.z) % 2 == 1;
             slideScript.InitializeColor(isOffset);
         }
+        return tile.transform;
     }
 
     private void DestroyTile(Vector3 tilePosition)
@@ -186,7 +218,8 @@ public class GridManager : MonoBehaviour
                 break;
             }
         }
-        Instantiate(player, position, Quaternion.identity);
+        startLocation = GetClosestCell(position);
+        Player = Instantiate(playerPrefab, startLocation, Quaternion.identity).transform;
     }
 
     private void GenerateSlideTiles()
@@ -224,17 +257,6 @@ public class GridManager : MonoBehaviour
             tilePosition = new(-1, 0, z);
             CreateTile(mountainPrefab, tilePosition);
         }
-    }
-
-    private void PrepareGameboard()
-    {
-        GenerateSlideTiles();
-        GenerateWalls();
-        GenerateGoalTile();
-        GenerateBoxes();
-        GeneratePlayer();
-        // Move the camera over the center of the board.
-        mainCamera.position = new Vector3((float)boardWidth / 2 - 0.5f, 15f, (float)boardHeight / 2 - 0.5f);
     }
 
     private Tile[] RandomizeWithFisherYates(Tile[] array)

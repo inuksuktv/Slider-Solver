@@ -94,14 +94,9 @@ public class PlayerController : MonoBehaviour
         CommandManager.Instance.Undo();
     }
 
-    private void Start()
-    {
-        goalTilePosition = GridManager.Instance.GetClosestCell(FindFirstObjectByType<GoalTile>().transform.position);
-    }
-
     private void Update()
     {
-        if (GridManager.Instance.GetClosestCell(transform.position) == goalTilePosition) {
+        if (GridManager.Instance.GetClosestCell(transform.position) == GridManager.Instance.GetClosestCell(GridManager.Instance.Goal.position)) {
             Debug.Log("You win the game!");
         }
     }
