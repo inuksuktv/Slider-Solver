@@ -8,7 +8,11 @@ public class Graph : MonoBehaviour
 {
     public List<List<Vertex>> adjacency;
     public HashSet<(Vector3Int, bool[,])> visited;
-    private int maxVertices = 10000;
+
+    private Vector3Int currentPlayer;
+    private List<Vector3Int> boxLocations;
+    Vector3Int direction;
+    private int maxVertices = 1000000;
 
     public Vertex BreadthFirstSearch(Vector3Int position, List<Transform> boxList)
     {
@@ -20,11 +24,11 @@ public class Graph : MonoBehaviour
             boxesInitial.Add(GridManager.Instance.GetClosestCell(box.position));
         }
 
-        // Initialize data structures for the search. I want a stack of initialized vertices, an adjacency list, a hashset for visited vertices, and a queue.
-        adjacency = new(maxVertices);
-        visited = new(maxVertices);
-        Stack<Vertex> vertices = new(maxVertices);
-        Queue<Vertex> search = new(maxVertices);
+        // Initialize data structures for the search. I want an adjacency list, a hashset for visited vertices, a stack of initialized vertices, and a queue.
+        adjacency = new List<List<Vertex>>(maxVertices);
+        visited = new HashSet<(Vector3Int, bool[,])>(maxVertices);
+        Stack<Vertex> vertices = new(maxVertices * 5);
+        Queue<Vertex> search = new(maxVertices * 2);
         for (int i = 0; i < maxVertices; i++) {
             Vertex z = new();
             vertices.Push(z);
@@ -43,10 +47,9 @@ public class Graph : MonoBehaviour
         while (search.Count > 0)
         {
             // Dequeue the next vertex and read the game state.
-            Vertex u = search.Dequeue();
-            Vector3Int currentPlayer = u.myPlayerLocation;
-            List<Vector3Int> boxLocations = DecodeBoxArray(u.myArray);
-            Vector3Int direction = new();
+            Vertex parentVertex = search.Dequeue();
+            currentPlayer = parentVertex.myPlayerLocation;
+            boxLocations = DecodeBoxArray(parentVertex.myArray);
 
             // For each direction, try to move in that direction.
             for (int moveIndex = 0; moveIndex < 4; moveIndex++)
@@ -70,34 +73,42 @@ public class Graph : MonoBehaviour
 
                 MoveCommand command = GridManager.Instance.Player.GetComponent<PlayerController>().MoveProcessing(direction);
 
-                // For each legal move from vertex u, write the game state to the new vertex and record adjacency.
+                // For each legal move from the parent, write the game state to the new vertex and record adjacency.
                 if (command != null) {
                     // Pushing a box onto the goal tile means there's no solution, so don't consider that move.
                     bool isUnsolvable = command.myUnit.CompareTag("Box") && command.myTo == goal;
                     if (isUnsolvable) { continue; }
 
-                    // Visit the new vertex.
+                    // Record the new game vertex and update the adjacency list.
+                    Debug.Log("Moving " + command.myUnit.name + " from " + command.myFrom + " to " + command.myTo);
                     GridManager.Instance.MoveUnit(command.myUnit, command.myTo);
                     GridManager.Instance.UpdateTiles();
 
                     Vertex v = vertices.Pop();
                     searchIndex++;
-                    v.LateConstructor(searchIndex, command.myTo, u, command);
+                    v.LateConstructor(searchIndex, command.myTo, parentVertex, command);
+                    Debug.Log("Parent move count: " + parentVertex.myMoves.Count);
 
-                    visited.Add(v.GetTuple());
-                    adjacency[u.myIndex].Add(v);
+                    adjacency[parentVertex.myIndex].Add(v);
+                    Debug.Log("Parent vertex adjacency count: " + adjacency[parentVertex.myIndex].Count);
 
                     // If the player arrived at the goal, return immediately.
                     bool isSolved = command.myUnit.CompareTag("Player") && command.myTo == goal;
                     if (isSolved) {
                         Debug.Log("Found a solution after evaluating " + searchIndex + " moves.");
-                        //PlaceGamePieces(playerInitial, boxesInitial);
+                        Debug.Log("Solution move count is " + v.myMoves.Count + ".");
+                        MoveCommand[] moveArray = new MoveCommand[v.myMoves.Count];
+                        v.myMoves.CopyTo(moveArray, 0);
+                        foreach (MoveCommand move in moveArray) {
+                            Debug.Log(move.myTo);
+                        }
+                        PlaceGamePieces(playerInitial, boxesInitial);
                         return v;
                     }
                 }
             }
             // Now vertex u's adjacency list has been created. Check if those game states have been reached previously.
-            foreach (Vertex w in adjacency[u.myIndex]) {
+            foreach (Vertex w in adjacency[parentVertex.myIndex]) {
                 (Vector3Int, bool[,]) tuple = w.GetTuple();
                 // If it's a new game state, enqueue the vertex and mark it visited.
                 if (!visited.Contains(tuple)) {

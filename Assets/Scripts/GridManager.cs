@@ -158,7 +158,7 @@ public class GridManager : MonoBehaviour
                 break;
             case GoalWall.Left:
                 goalPosition.x = -1;
-                goalPosition.z = Random.Range(0, boardHeight - 1);
+                goalPosition.z = Random.Range(1, boardHeight - 1);
                 wallPosition.x = -2;
                 wallPosition.z = goalPosition.z;
                 break;

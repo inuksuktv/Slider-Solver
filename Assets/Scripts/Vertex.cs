@@ -28,7 +28,13 @@ public class Vertex
         myPlayerLocation = position;
         myArray = EncodeBoxArray(GridManager.Instance.boxes);
         myParent = parent;
-        myMoves = parent.myMoves;
+
+        myMoves = new();
+        MoveCommand[] moveArray = new MoveCommand[parent.myMoves.Count];
+        parent.myMoves.CopyTo(moveArray, 0);
+        foreach (MoveCommand move in moveArray) {
+            myMoves.AddLast(move);
+        }
         myMoves.AddLast(command);
     }
 
