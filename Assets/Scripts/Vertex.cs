@@ -5,9 +5,9 @@ using UnityEngine;
 
 public class Vertex
 {
-    public LinkedList<MoveCommand> myMoves = new();
+    public LinkedList<MoveCommand> myMoves;
     public Vertex myParent;
-    public List<Vertex> myNeighbors = new();
+    public List<Vertex> myNeighbors;
     public Vector3Int myPlayerLocation { get; private set; }
     public List<Transform> myBoxes { get; private set; }
     public bool[,] myArray { get; private set; }
@@ -18,6 +18,10 @@ public class Vertex
         myPlayerLocation = position;
         myBoxes = boxes;
         myArray = EncodeBoxArray(boxes);
+        myMoves = new();
+        myNeighbors = new();
+        myParent = null;
+        searchIndex = 0;
     }
 
     public (Vector3Int, bool[,]) GetTuple()

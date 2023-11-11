@@ -15,7 +15,11 @@ public class ButtonExample2 : MonoBehaviour
 
     private void TaskOnClick()
     {
-        ButtonExample solveButton = canvas.Find("SolveButton").GetComponent<ButtonExample>();
-        if (solveButton.solution != null) { Debug.Log(solveButton.solution.myMoves.Count); }
+        if (GridManager.Instance.TryGetComponent<Graph>(out Graph script)) {
+            if (script.vertices.TryGetValue(0, out Vertex origin)) {
+                Debug.Log(origin.myMoves.Count);
+                Debug.Log(origin.myNeighbors.Count);
+            }
+        }
     }
 }

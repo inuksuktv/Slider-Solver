@@ -9,6 +9,7 @@ public class Graph: MonoBehaviour
     // Number of vertices.
     private int maxVertices;
     public HashSet<(Vector3Int, bool[,])> visited;
+    public Dictionary<int, Vertex> vertices;
 
     public Graph(int V)
     {
@@ -35,16 +36,15 @@ public class Graph: MonoBehaviour
         Queue search = new();
         search.Enqueue(s);
 
-        // The first four tiles are being visited correctly. I expect the forward move to be explored next but instead we start from the right move, which was explored most recently.
-        // My hashset is perhaps not working as intended. I'm definitely having trouble setting the game state correctly when loading data from a vertex.
-        // I should break these problems into smaller pieces and work up to my desired solution step by step.
-
-        int a = 0;
+        // This is desperately in need of a refactor. Something isn't working right while populating the Vertices with data, such as neighbours and move commands.
+        int n = 0;
         while (search.Count > 0) {
             // Read the game state from the vertex and move the game pieces.
             Vertex u = (Vertex)search.Dequeue();
-            Debug.Log("Vertex " + a + " player position: " + u.myPlayerLocation);
-            u.searchIndex = a;
+            Debug.Log("Vertex " + n + " player position: " + u.myPlayerLocation);
+            u.searchIndex = n;
+            vertices = new();
+            vertices.Add(n, u);
             List<Transform> boxes = u.myBoxes;
             List<Vector3Int> boxLocations = DecodeBoxArray(u.myArray);
             Vector3Int startPosition = u.myPlayerLocation;
@@ -78,11 +78,10 @@ public class Graph: MonoBehaviour
                 MoveCommand command = GridManager.Instance.Player.GetComponent<PlayerController>().MoveProcessing(direction);
 
                 if (command != null) {
-
                     if (command.myUnit.CompareTag("Box") && command.myTo == goal) { continue; }
                     GridManager.Instance.MoveUnit(command.myUnit, command.myTo);
                     GridManager.Instance.UpdateTiles();
-                    Debug.Log($"Sending {command.myUnit.name} from " + command.myFrom + " to: " + command.myTo);
+                    Debug.Log($"Exploring with {command.myUnit.name} from " + command.myFrom + " to " + command.myTo);
 
                     Vertex v = new(command.myTo, boxes);
 
@@ -92,24 +91,24 @@ public class Graph: MonoBehaviour
                     v.myMoves.AddLast(command);
 
                     if (command.myUnit.CompareTag("Player") && command.myTo == goal) {
-                        v.searchIndex = a + 1;
-                        // This is counting all moces made and not just the solution.
+                        v.searchIndex = n + 1;
+                        // This is counting all moves made and not just the solution. How come?
                         Debug.Log("Found a solution at vertex " + v.searchIndex + " after " + v.myMoves.Count + " moves.");
-                        return v; }
+                        return v;
+                    }
                 }
             }
 
             // If an unexplored vertex was found, mark it visited and enqueue it. This is the largest search-pruning step.
             foreach (Vertex v in u.myNeighbors) {
                 (Vector3Int, bool[,]) tuple = v.GetTuple();
-                if (visited.Contains(tuple)) { Debug.Log("Encounted a previously discovered game state."); }
                 if (!visited.Contains(tuple)) {
                     visited.Add(tuple);
                     search.Enqueue(v);
                 }
             }
             Debug.Log(visited.Count);
-            if (a++ > 10000) { Debug.Log("Ended search early."); break; }
+            //if (n++ > 20000) { Debug.Log("Ended search early after " + n + " game states discovered."); break; }
         }
         // Debug.Log("Search finished!");
         player.position = initialPosition;
