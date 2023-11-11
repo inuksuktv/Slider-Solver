@@ -14,7 +14,7 @@ public class ButtonExample : MonoBehaviour
 
     private void TaskOnClick()
     {
-        Transform player = GameObject.FindGameObjectWithTag("Player").transform;
-        solution = GridManager.Instance.GetComponent<Graph>().BreadthFirstSearch(player, GridManager.Instance.boxes);
+        Debug.Log("Clicked.");
+        solution = GridManager.Instance.GetComponent<Graph>().BreadthFirstSearch(GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position), GridManager.Instance.boxes);
     }
 }

@@ -16,9 +16,8 @@ public class ButtonExample2 : MonoBehaviour
     private void TaskOnClick()
     {
         if (GridManager.Instance.TryGetComponent<Graph>(out Graph script)) {
-            if (script.vertices.TryGetValue(0, out Vertex origin)) {
-                Debug.Log(origin.myMoves.Count);
-                Debug.Log(origin.myNeighbors.Count);
+            for (int i = 0; i < 4; i++) {
+                Debug.Log(script.adjacency[i]);
             }
         }
     }

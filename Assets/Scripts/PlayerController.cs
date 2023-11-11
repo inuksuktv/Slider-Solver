@@ -115,11 +115,12 @@ public class PlayerController : MonoBehaviour
 
     public void GetActiveUnit(Vector3Int direction)
     {
+        // The player is the active unit by default. If the player pushed a box, the box is the active unit instead.
         currentCell = GridManager.Instance.GetClosestCell(transform.position);
         targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
         unit = transform;
 
-        // If the player moved into a box, make the box the active unit. Otherwise the player is the active unit.
+        // This could use a refactor to remove the loop. Perhaps make boxes the children of the tile they move to. That should be an easy change to GridManager's UpdateTiles method.
         foreach (Transform box in GridManager.Instance.boxes) {
             if (targetCell == GridManager.Instance.GetClosestCell(box.position)) {
                 currentCell = targetCell;
