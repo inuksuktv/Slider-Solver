@@ -7,21 +7,35 @@ public class Vertex
 {
     public LinkedList<MoveCommand> myMoves;
     public Vertex myParent;
-    public List<Vertex> myNeighbors;
-    public Vector3Int myPlayerLocation { get; private set; }
-    public List<Transform> myBoxes { get; private set; }
-    public bool[,] myArray { get; private set; }
-    public int searchIndex;
+    public Vector3Int myPlayerLocation;
+    public bool[,] myArray;
+    public int myIndex;
 
-    public Vertex(Vector3Int position, List<Transform> boxes)
+    // Used for the starting vertex.
+    public void LateConstructor(int index, Vector3Int position)
     {
+        myIndex = index;
         myPlayerLocation = position;
-        myBoxes = boxes;
-        myArray = EncodeBoxArray(boxes);
-        myMoves = new();
-        myNeighbors = new();
+        myArray = EncodeBoxArray(GridManager.Instance.boxes);
         myParent = null;
-        searchIndex = 0;
+        myMoves = new();
+    }
+
+    // Used for every other vertex.
+    public void LateConstructor(int index, Vector3Int position, Vertex parent, MoveCommand command)
+    {
+        myIndex = index;
+        myPlayerLocation = position;
+        myArray = EncodeBoxArray(GridManager.Instance.boxes);
+        myParent = parent;
+
+        myMoves = new();
+        MoveCommand[] moveArray = new MoveCommand[parent.myMoves.Count];
+        parent.myMoves.CopyTo(moveArray, 0);
+        foreach (MoveCommand move in moveArray) {
+            myMoves.AddLast(move);
+        }
+        myMoves.AddLast(command);
     }
 
     public (Vector3Int, bool[,]) GetTuple()

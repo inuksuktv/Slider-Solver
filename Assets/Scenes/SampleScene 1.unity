@@ -1113,7 +1113,6 @@ GameObject:
   - component: {fileID: 1604034154}
   - component: {fileID: 1604034153}
   - component: {fileID: 1604034156}
-  - component: {fileID: 1604034157}
   m_Layer: 0
   m_Name: GridManager
   m_TagString: Untagged
@@ -1136,9 +1135,9 @@ MonoBehaviour:
   boxes: []
   startLocation: {x: 0, y: 0, z: 0}
   boxLocations: []
-  boardHeight: 8
-  boardWidth: 8
-  boxCount: 7
+  boardHeight: 32
+  boardWidth: 32
+  boxCount: 24
   slidePrefab: {fileID: 2222053095397704783, guid: 87a0ef049cf92d142bb7e547adb6b6e4, type: 3}
   mountainPrefab: {fileID: 1154256661188788847, guid: 14cc6b2e30ec1e94d871449b7eb68b29, type: 3}
   goalPrefab: {fileID: 2129644373845940138, guid: ce90d8b4a573f7946b95fa330ee4169c, type: 3}
@@ -1181,18 +1180,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7de565a4ac88d0f41a0ab766546ee737, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1604034157
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1604034152}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b676fe786c23d34b9ff1fcbfb9bd045, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1807754925
@@ -1352,7 +1339,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee5a388c6f14f2942b372eff0205235f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boxLocations: []
 --- !u!114 &1863834827
 MonoBehaviour:
   m_ObjectHideFlags: 0
