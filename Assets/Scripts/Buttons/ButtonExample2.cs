@@ -2,11 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class ButtonExample2 : MonoBehaviour
 {
     Transform canvas;
-    public List<Vector3Int> boxLocations = new();
 
     void Start()
     {
@@ -22,12 +22,16 @@ public class ButtonExample2 : MonoBehaviour
         //    else { Debug.Log("Hashset doesn't contain " + currentPos); }
         //}
 
+        // Play out the solution.
         var solveButton = canvas.Find("SolveButton").GetComponent<ButtonExample>();
-        boxLocations.Clear();
-        foreach (Vector3Int box in solveButton.boxLocations) {
-            boxLocations.Add(box);
+        List<MoveCommand> solution = solveButton.solution.myMoves;
+        if (solution != null) {
+            var sequence = DOTween.Sequence();
+            foreach (MoveCommand move in solution) {
+                sequence.Append(move.myUnit.DOMove(move.myTo, 1).OnComplete(() => { GridManager.Instance.UpdateTiles(); }));
+            }
         }
-        
+
 
 
 

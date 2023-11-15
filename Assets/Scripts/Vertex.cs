@@ -6,11 +6,13 @@ using UnityEngine;
 
 public class Vertex: IEquatable<Vertex>
 {
-    public LinkedList<MoveCommand> myMoves;
+    public List<MoveCommand> myMoves;
     public Vertex myParent;
     public Vector3Int myPlayerLocation;
     public int myIndex;
     public List<Vector3Int> sortedBoxes;
+
+    private Grid grid;
 
     // Used for the starting vertex.
     public void LateConstructor(int index, Vector3Int position, List<Vector3Int> unsortedBoxes)
@@ -44,15 +46,9 @@ public class Vertex: IEquatable<Vertex>
         MoveCommand[] moveArray = new MoveCommand[parent.myMoves.Count];
         parent.myMoves.CopyTo(moveArray, 0);
         foreach (MoveCommand move in moveArray) {
-            myMoves.AddLast(move);
+            myMoves.Add(move);
         }
-        myMoves.AddLast(command);
-    }
-
-    public (Vector3Int, List<Vector3Int>) GetTuple()
-    {
-        (Vector3Int, List<Vector3Int>) tuple = (myPlayerLocation, sortedBoxes);
-        return tuple;
+        myMoves.Add(command);
     }
 
     public bool Equals(Vertex other)

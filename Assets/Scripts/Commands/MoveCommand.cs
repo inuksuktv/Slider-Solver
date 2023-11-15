@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 
 public class MoveCommand : CommandManager.ICommand
@@ -16,12 +17,7 @@ public class MoveCommand : CommandManager.ICommand
 
     public void Execute()
     {
-        GridManager.Instance.MoveUnit(myUnit, myTo);
-
-        // Send an async task to the animation system?
-
-        // Once it's done, update the tiles in case we moved boxes.
-        GridManager.Instance.UpdateTiles();
+        myUnit.DOMove(myTo, 1).OnComplete(() => { GridManager.Instance.UpdateTiles(); });
     }
 
     public void Undo()

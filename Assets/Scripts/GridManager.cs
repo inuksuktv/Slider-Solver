@@ -12,6 +12,7 @@ public class GridManager : MonoBehaviour
     public Vector3Int startLocation = new();
     public List<Vector3Int> boxLocations = new();
 
+
     private enum GoalWall
     {
         Bottom,
@@ -29,6 +30,7 @@ public class GridManager : MonoBehaviour
 
     private Transform mainCamera;
     private Dictionary<Vector3Int, Tile> tiles = new();
+    private List<SlideTile> slideTiles = new();
 
     private readonly float tileOffset = -0.6f;
 
@@ -74,7 +76,7 @@ public class GridManager : MonoBehaviour
         return closestCell;
     }
 
-    public void MoveUnit(Transform unit, Vector3Int target, bool animate = true)
+    public void MoveUnit(Transform unit, Vector3Int target)
     {
         unit.position = target;
     }
@@ -92,17 +94,21 @@ public class GridManager : MonoBehaviour
 
     public void UpdateTiles()
     {
-        foreach (var tile in tiles) {
-            if (tile.Value.TryGetComponent(out SlideTile slideTile)) {
-                slideTile.BlocksMove = false;
-            }
+        foreach (SlideTile tile in slideTiles) {
+            tile.BlocksMove = false;
         }
         foreach (Transform box in boxes) {
-            Tile boxTile = GetTileAtPosition(GetClosestCell(box.position));
-            if (boxTile != null) {
-                boxTile.BlocksMove = true;
+            Tile nearestTile = GetTileAtPosition(GetClosestCell(box.position));
+            if (nearestTile != null) {
+                box.parent = nearestTile.transform;
+                nearestTile.BlocksMove = true;
             }
-
+        }
+        if (Player != null) {
+            Tile playerTile = GetTileAtPosition(GetClosestCell(Player.position));
+            if (playerTile != null) {
+                Player.parent = playerTile.transform;
+            }
         }
     }
 
@@ -182,6 +188,7 @@ public class GridManager : MonoBehaviour
         if (tile.TryGetComponent<SlideTile>(out var slideScript)) {
             bool isOffset = (position.x + position.z) % 2 == 1;
             slideScript.InitializeColor(isOffset);
+            slideTiles.Add(slideScript);
         }
         return tile.transform;
     }
@@ -220,10 +227,12 @@ public class GridManager : MonoBehaviour
         }
         startLocation = GetClosestCell(position);
         Player = Instantiate(playerPrefab, startLocation, Quaternion.identity).transform;
+        Player.parent = GetTileAtPosition(startLocation).transform;
     }
 
     private void GenerateSlideTiles()
     {
+        slideTiles.Clear();
         for (int z = 0; z < boardHeight; z++) {
             for (int x = 0; x < boardWidth; x++) {
                 Vector3 position = new(x, 0, z);

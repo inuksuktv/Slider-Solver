@@ -12,7 +12,6 @@ public class PlayerController : MonoBehaviour
     private InputAction rightAction;
     private InputAction backAction;
 
-    private Vector3Int goalTilePosition;
     public Vector3Int currentCell, targetCell;
     public Transform unit;
 
@@ -120,7 +119,7 @@ public class PlayerController : MonoBehaviour
         targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
         unit = transform;
 
-        // This could use a refactor to remove the loop. Perhaps make boxes the children of the tile they move to. That should be an easy change to GridManager's UpdateTiles method.
+        // This is able to shove a stack of boxes but it only works if the subsequent boxes in the stack are evaluated later in the loop.
         foreach (Transform box in GridManager.Instance.boxes) {
             if (targetCell == GridManager.Instance.GetClosestCell(box.position)) {
                 currentCell = targetCell;
