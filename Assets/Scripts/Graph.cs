@@ -1,18 +1,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 // This class represents a directed graph using an adjacency list.
 public class Graph : MonoBehaviour
 {
     public List<List<Vertex>> adjacency;
-    public HashSet<(Vector3Int, List<Vector3Int>)> visited;
+    public HashSet<Vertex> visited;
 
     private Vector3Int currentPlayer;
     private List<Vector3Int> boxLocations;
     Vector3Int direction;
-    private int maxVertices = 50000;
+    private int maxVertices = 200000;
 
     public Vertex BreadthFirstSearch(Vector3Int position, List<Transform> boxList)
     {
@@ -27,9 +28,9 @@ public class Graph : MonoBehaviour
 
         // Initialize data structures for the search. I want an adjacency list, a hashset to track visited vertices, a stack of initialized vertices, and a queue.
         adjacency = new List<List<Vertex>>(maxVertices);
-        visited = new HashSet<(Vector3Int, List<Vector3Int>)>();
-        Stack<Vertex> vertices = new(maxVertices * 5);
-        Queue<Vertex> search = new(maxVertices * 3);
+        visited = new HashSet<Vertex>();
+        Stack<Vertex> vertices = new(maxVertices);
+        Queue<Vertex> search = new(maxVertices);
         for (int i = 0; i < maxVertices; i++) {
             Vertex z = new();
             vertices.Push(z);
@@ -41,14 +42,8 @@ public class Graph : MonoBehaviour
         // Visit the starting vertex, write its data, and queue it for search.
         Vertex start = vertices.Pop();
         int vertexIndex = 0;
-        // Refactoring while testing, wheeeee.
-        List<Vector3Int> listOfBoxes = new();
-        foreach (Transform box in GridManager.Instance.boxes) {
-            listOfBoxes.Add(GridManager.Instance.GetClosestCell(box.position));
-        }
-        listOfBoxes.Sort();
-        start.LateConstructor(vertexIndex, playerInitial, listOfBoxes);
-        //visited.Add(start.myArray,DecodeBoxArray(start.myArray)); Get a real reference to the position list.
+        start.LateConstructor(vertexIndex, playerInitial, boxesInitial);
+        visited.Add(start);
         search.Enqueue(start);
 
         // Begin the search.
@@ -57,7 +52,7 @@ public class Graph : MonoBehaviour
             // Dequeue the next vertex and read the game state. Don't set the game pieces until we're inside the next loop.
             Vertex parentVertex = search.Dequeue();
             currentPlayer = parentVertex.myPlayerLocation;
-            boxLocations = parentVertex.boxList;
+            boxLocations = parentVertex.sortedBoxes;
 
             // Find adjacent vertices by trying to move in each direction.
             for (int moveIndex = 0; moveIndex < 4; moveIndex++)
@@ -88,13 +83,13 @@ public class Graph : MonoBehaviour
                     if (isUnsolvable) { continue; }
 
                     // Record the new game vertex and update the adjacency list.
-                    Debug.Log("Moving " + command.myUnit.name + " from " + command.myFrom + " to " + command.myTo);
+                    //Debug.Log("Moving " + command.myUnit.name + " from " + command.myFrom + " to " + command.myTo);
                     GridManager.Instance.MoveUnit(command.myUnit, command.myTo);
                     GridManager.Instance.UpdateTiles();
 
                     Vertex childVertex = vertices.Pop();
                     vertexIndex++;
-                    childVertex.LateConstructor(vertexIndex, command.myTo, parentVertex, command); // There's a bug here if a box is moved. The box location is recorded instead of the player location.
+                    childVertex.LateConstructor(vertexIndex, parentVertex, command); // There's a bug here if a box is moved. The box location is recorded instead of the player location.
                     adjacency[parentVertex.myIndex].Add(childVertex);
 
                     // Return if the player arrived at the goal.
@@ -109,11 +104,10 @@ public class Graph : MonoBehaviour
 
             // Now the parent vertex's adjacency list has been created. Check if those game states have been reached previously.
             foreach (Vertex neighbour in adjacency[parentVertex.myIndex]) {
-                (Vector3Int, List<Vector3Int>) tuple = neighbour.GetTuple();
                 // If it's a new game state, enqueue the vertex and mark it visited.
-                if (!visited.Contains(neighbour.GetTuple())) {
-                    Debug.Log("Added a vertex to the search.");
-                    //visited.Add(neighbour.myArray, DecodeBoxArray(neighbour.myArray)); Get an actual reference to the box list.
+                if (!visited.Contains(neighbour)) {
+                    //Debug.Log("Added a vertex to the search.");
+                    visited.Add(neighbour);
                     search.Enqueue(neighbour);
                 }
             }

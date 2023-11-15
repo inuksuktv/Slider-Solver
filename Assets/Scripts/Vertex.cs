@@ -10,29 +10,36 @@ public class Vertex: IEquatable<Vertex>
     public Vertex myParent;
     public Vector3Int myPlayerLocation;
     public int myIndex;
-    public List<Vector3Int> boxList;
+    public List<Vector3Int> sortedBoxes;
 
     // Used for the starting vertex.
-    public void LateConstructor(int index, Vector3Int position, List<Vector3Int> sortedBoxes)
+    public void LateConstructor(int index, Vector3Int position, List<Vector3Int> unsortedBoxes)
     {
         myIndex = index;
         myPlayerLocation = position;
-        boxList = new();
-        foreach (var box in sortedBoxes) {
-            boxList.Add(box);
+        sortedBoxes = new();
+        Vector3Int[] array = new Vector3Int[unsortedBoxes.Count];
+        unsortedBoxes.CopyTo(array);
+        foreach (var box in unsortedBoxes) {
+            sortedBoxes.Add(box);
         }
-        boxList = boxList.OrderBy(v => v.x).ToList();
+        sortedBoxes = sortedBoxes.OrderBy(v => v.x).ToList();
         myParent = null;
         myMoves = new();
     }
 
     // Used for every other vertex.
-    public void LateConstructor(int index, Vector3Int position, Vertex parent, MoveCommand command)
+    public void LateConstructor(int index, Vertex parent, MoveCommand command)
     {
         myIndex = index;
-        myPlayerLocation = position;
+        myPlayerLocation = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
         myParent = parent;
-
+        sortedBoxes = new();
+        Vector3Int[] array = new Vector3Int[GridManager.Instance.boxes.Count];
+        foreach (Transform box in GridManager.Instance.boxes) {
+            sortedBoxes.Add(GridManager.Instance.GetClosestCell(box.position));
+        }
+        sortedBoxes = sortedBoxes.OrderBy(v => v.x).ToList();
         myMoves = new();
         MoveCommand[] moveArray = new MoveCommand[parent.myMoves.Count];
         parent.myMoves.CopyTo(moveArray, 0);
@@ -44,7 +51,7 @@ public class Vertex: IEquatable<Vertex>
 
     public (Vector3Int, List<Vector3Int>) GetTuple()
     {
-        (Vector3Int, List<Vector3Int>) tuple = (myPlayerLocation, boxList);
+        (Vector3Int, List<Vector3Int>) tuple = (myPlayerLocation, sortedBoxes);
         return tuple;
     }
 
@@ -52,7 +59,7 @@ public class Vertex: IEquatable<Vertex>
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return myPlayerLocation.Equals(other.myPlayerLocation) && boxList.Count == other.boxList.Count && boxList.TrueForAll(other.boxList.Contains);
+        return myPlayerLocation.Equals(other.myPlayerLocation) && sortedBoxes.Count == other.sortedBoxes.Count && sortedBoxes.TrueForAll(other.sortedBoxes.Contains);
     }
 
     public override bool Equals(object obj)
@@ -65,7 +72,7 @@ public class Vertex: IEquatable<Vertex>
         unchecked {
             int hash = 17;
             hash = hash * 23 + myPlayerLocation.GetHashCode();
-            foreach (var box in boxList) {
+            foreach (var box in sortedBoxes) {
                 hash = hash * 23 + box.GetHashCode();
             }
             return hash;
