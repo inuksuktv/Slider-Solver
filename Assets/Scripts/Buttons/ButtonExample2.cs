@@ -6,8 +6,7 @@ using UnityEngine.UI;
 public class ButtonExample2 : MonoBehaviour
 {
     Transform canvas;
-    //int clicks = 0;
-    public List<Vector3Int> boxLocations;
+    public List<Vector3Int> boxLocations = new();
 
     void Start()
     {
@@ -17,26 +16,34 @@ public class ButtonExample2 : MonoBehaviour
 
     private void TaskOnClick()
     {
-        //if (canvas.Find("SolveButton").TryGetComponent(out ButtonExample script)) {
-        //    if (script.clicked.Contains(clicks)) { Debug.Log("Hashset contains " + clicks + "."); }
-        //    else { Debug.Log("Hashset doesn't contain " + clicks + "."); }
-        //}
-        //clicks++;
-
         //Vector3Int currentPos = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
         //if (canvas.Find("SolveButton").TryGetComponent(out ButtonExample script)) {
         //    if (script.playerPositions.Contains(currentPos)) { Debug.Log("Hashset contains " + currentPos); }
         //    else { Debug.Log("Hashset doesn't contain " + currentPos); }
         //}
 
-        //boxLocations.Clear();
-        //foreach (Vector3Int box in GridManager.Instance.boxLocations) {
-        //    boxLocations.Add(box);
+        var solveButton = canvas.Find("SolveButton").GetComponent<ButtonExample>();
+        boxLocations.Clear();
+        foreach (Vector3Int box in solveButton.boxLocations) {
+            boxLocations.Add(box);
+        }
+        
+
+
+
+        //ButtonExample script = canvas.Find("SolveButton").GetComponent<ButtonExample>();
+        //boxLocations = new();
+        //foreach (Transform box in GridManager.Instance.boxes) {
+        //    boxLocations.Add(GridManager.Instance.GetClosestCell(box.position));
+        //    Debug.Log(box.position);
         //}
-        //if (canvas.Find("SolveButton").TryGetComponent(out ButtonExample script)) {
-        //    if (script.boxPos.Contains(boxLocations)) { Debug.Log("Box locations have been logged."); }
-        //    else { Debug.Log("Box locations have not been logged."); }
+        //if (script.boxLocations.Count > 0 && EncodeBoxArray(boxLocations).ToString() == EncodeBoxArray(script.boxLocations).ToString()) {
+        //    if (script.boxPos.Contains(EncodeBoxArray(boxLocations).ToString())) { Debug.Log("Encoding/decoding is working, game state detected."); }
+        //    else { Debug.Log("This game state has not been detected."); }
         //}
+        //else Debug.Log("Button1 doesn't have box locations or Button1 and Button2 data didn't match.");
+
+
 
         //if (canvas.Find("SolveButton").TryGetComponent(out ButtonExample script)) {
         //    Vector3Int position = script.currentPlayer;
@@ -50,21 +57,21 @@ public class ButtonExample2 : MonoBehaviour
         //        script.visited.Add(tuple);
         //    }
         //}
-
     }
 
-    //private bool[,] EncodeBoxArray(Vector3Int[] boxList)
+    //private List<Vector3Int> DecodeBoxArray(bool[] boxArray)
     //{
+    //    List<Vector3Int> boxList = new List<Vector3Int>();
     //    int width = GridManager.Instance.boardWidth;
     //    int height = GridManager.Instance.boardHeight;
-    //    bool[,] boxArray = new bool[width, height];
-    //    boxArray.Initialize();
 
-    //    foreach (Vector3Int box in boxList) {
-    //        int x = box.x;
-    //        int z = box.z;
-    //        boxArray[x, z] = true;
+    //    for (int i = 0; i < width * height; i++) {
+    //        if (boxArray[i]) {
+    //            int x = i % width;
+    //            int z = (int)Mathf.Floor(i / width);
+    //        }
     //    }
-    //    return boxArray;
+    //    return boxList;
     //}
+
 }
