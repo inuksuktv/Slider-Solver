@@ -1139,9 +1139,9 @@ MonoBehaviour:
   boxes: []
   startLocation: {x: 0, y: 0, z: 0}
   boxLocations: []
-  boardHeight: 14
-  boardWidth: 14
-  boxCount: 9
+  boardHeight: 12
+  boardWidth: 12
+  boxCount: 10
   slidePrefab: {fileID: 2222053095397704783, guid: 87a0ef049cf92d142bb7e547adb6b6e4, type: 3}
   mountainPrefab: {fileID: 1154256661188788847, guid: 14cc6b2e30ec1e94d871449b7eb68b29, type: 3}
   goalPrefab: {fileID: 2129644373845940138, guid: ce90d8b4a573f7946b95fa330ee4169c, type: 3}
@@ -1356,7 +1356,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee5a388c6f14f2942b372eff0205235f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boxLocations: []
+  animationSpeed: 10
 --- !u!114 &1863834827
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -140,11 +140,12 @@ public class Graph : MonoBehaviour
             // Illegal moves return null. Only legal moves get processed.
             if (command != null) {
                 // Pushing a box onto the goal tile means there's no solution, so don't consider that move.
-                bool isUnsolvable = command.myUnit.CompareTag("Box") && command.myTo == goal;
+                Transform unit = GridManager.Instance.GetTileAtPosition(command.myFrom).transform.GetChild(0);
+                bool isUnsolvable = unit.CompareTag("Box") && command.myTo == goal;
                 if (isUnsolvable) { continue; }
 
                 // Record the new game vertex and update the adjacency list.
-                GridManager.Instance.MoveUnit(command.myUnit, command.myTo);
+                GridManager.Instance.MoveUnit(unit, command.myTo);
                 GridManager.Instance.UpdateTiles();
 
                 Vertex childVertex = vertices.Pop();

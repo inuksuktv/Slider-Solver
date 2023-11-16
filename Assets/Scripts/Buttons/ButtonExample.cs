@@ -8,7 +8,6 @@ using UnityEngine.UI;
 public class ButtonExample : MonoBehaviour
 {
     public Vertex solution;
-    //public Vector3Int currentPlayer;
     public List<Vector3Int> boxLocations = new();
     public bool[,] myArray;
     public HashSet<Vertex> visited = new();

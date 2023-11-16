@@ -141,7 +141,7 @@ public class PlayerController : MonoBehaviour
 
         FindDestination(direction);
 
-        MoveCommand command = new(currentCell, targetCell, unit);
+        MoveCommand command = new(currentCell, targetCell);
         return command;
     }
 }
