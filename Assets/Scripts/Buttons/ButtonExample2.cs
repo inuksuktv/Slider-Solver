@@ -7,26 +7,24 @@ using System.Threading.Tasks;
 
 public class ButtonExample2 : MonoBehaviour
 {
-    Transform canvas;
-    [SerializeField] float animationSpeed = 10f;
+    Graph graph;
 
     void Start()
     {
         GetComponent<Button>().onClick.AddListener(TaskOnClick);
-        canvas = GameObject.Find("Canvas").transform;
+        graph = GridManager.Instance.GetComponent<Graph>();
     }
 
     private void TaskOnClick()
     {
         // Play out the solution.
-        var solveButton = canvas.Find("SolveButton").GetComponent<ButtonExample>();
-        if (solveButton.solution is null) {
+        if (graph.solution is null) {
             Debug.Log("No solution found.");
         }
         else {
             GridManager.Instance.UpdateTiles();
+            StartCoroutine(PlaySolution(graph.solution.myMoves));
         }
-        StartCoroutine(PlaySolution(solveButton.solution.myMoves));
     }
 
     private IEnumerator PlaySolution(List<MoveCommand> moves)

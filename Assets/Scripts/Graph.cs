@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 // This class represents a directed graph using an adjacency list.
@@ -11,19 +12,18 @@ public class Graph : MonoBehaviour
     private HashSet<Vertex> visited;
     private Stack<Vertex> vertices;
     private int vertexIndex;
-    private float startTime;
     private PlayerController playerScript;
 
     private Vector3Int currentPlayer;
     private Vector3Int goal;
     private List<Vector3Int> boxLocations;
     private Vector3Int direction;
+    public Vertex origin, solution;
 
     [SerializeField] private int maxVertices;
 
-    public Vertex BreadthFirstSearch(Vector3Int position, List<Transform> boxList)
+    public IEnumerator BreadthFirstSearch(Vector3Int position, List<Transform> boxList)
     {
-        startTime = Time.realtimeSinceStartup;
         playerScript = GridManager.Instance.Player.GetComponent<PlayerController>();
 
         // Store the initial game state.
@@ -35,23 +35,17 @@ public class Graph : MonoBehaviour
         }
 
         // Initialize data structures for the search. I use an adjacency list, a hashset to track visited vertices, a stack of initialized vertices, and a queue.
-        adjacency = new List<List<Vertex>>(maxVertices);
-        visited = new HashSet<Vertex>(maxVertices);
-        vertices = new(maxVertices);
-        Queue<Vertex> search = new();
-        for (int i = 0; i < maxVertices; i++) {
-            List<Vertex> list = new(4);
-            adjacency.Add(list);
-
-            Vertex v = new();
-            vertices.Push(v);
-        }
+        yield return StartCoroutine(InitializeDataStructuresWithCoroutines());
+        
 
         // Write the starting vertex's data, visit it, and queue it for search.
         Vertex start = vertices.Pop();
         vertexIndex = 0;
         start.LateConstructor(vertexIndex, playerInitial, boxesInitial);
+        origin = start;
         visited.Add(start);
+
+        Queue<Vertex> search = new();
         search.Enqueue(start);
 
         // Begin the search.
@@ -67,10 +61,9 @@ public class Graph : MonoBehaviour
             foreach (Vertex child in adjacency[parent.myIndex]) {
                 // Return if the player arrived at the goal.
                 if (CheckForSolution(child)) {
-                    float elapsedTime = Time.realtimeSinceStartup - startTime;
-                    Debug.Log("Search elapsed time: " + elapsedTime);
                     PlaceGamePieces(playerInitial, boxesInitial);
-                    return child;
+                    solution = child;
+                    yield break;
                 }
                 // Check if the vertex is in the hashset to see if the game state has been visited previously. If it's new, add it and queue it for search.
                 if (!visited.Contains(child)) {
@@ -82,12 +75,58 @@ public class Graph : MonoBehaviour
             if (vertexIndex > maxVertices - 5) {
                 break;
             }
+            // Yield to the main thread after checking 100 vertices.
+            if (vertexIndex % 100 == 0) { yield return null; }
         }
         PlaceGamePieces(playerInitial, boxesInitial);
-        float searchTime = Time.realtimeSinceStartup - startTime;
-        Debug.Log("Returned with no solution after searching " + vertexIndex + " game states in " + searchTime + " seconds.");
-        return null;
+        Debug.Log("Returned with no solution after searching " + vertexIndex + " game states.");
     }
+
+    private IEnumerator InitializeDataStructuresWithCoroutines()
+    {
+        Coroutine[] init = new Coroutine[3];
+        init[0] = StartCoroutine(AdjacencyList());
+        init[1] = StartCoroutine(Vertices());
+        init[2] = StartCoroutine(Visited());
+
+        foreach (Coroutine dataStructure in init) {
+            yield return dataStructure;
+        }
+        // Max Loop should only start once the adjacency list and stack of vertices have been initialized.
+        yield return StartCoroutine(MaxLoop());
+    }
+
+    private IEnumerator AdjacencyList()
+    {
+
+        yield return null;
+        adjacency = new List<List<Vertex>>(maxVertices);
+    }
+
+    private IEnumerator Vertices()
+    {
+        yield return null;
+        vertices = new(maxVertices);
+    }
+
+    private IEnumerator Visited()
+    {
+        yield return null;
+        visited = new HashSet<Vertex>(maxVertices);
+    }
+
+    private IEnumerator MaxLoop()
+    {
+        yield return null;
+        for (int i = 0; i < maxVertices; i++) {
+            List<Vertex> list = new(4);
+            adjacency.Add(list);
+
+            Vertex v = new();
+            vertices.Push(v);
+        }
+    }
+
 
     private bool CheckForSolution(Vertex childVertex)
     {
@@ -104,7 +143,7 @@ public class Graph : MonoBehaviour
         }
         return isSolved;
     }
-        
+
 
     private void PlaceGamePieces(Vector3Int playerFromVertex, List<Vector3Int> boxLocations)
     {
