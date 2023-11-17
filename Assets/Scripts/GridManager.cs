@@ -89,7 +89,7 @@ public class GridManager : MonoBehaviour
         GenerateBoxes();
         GeneratePlayer();
         // Move the camera over the center of the board.
-        mainCamera.position = new Vector3((float)boardWidth / 2 - 0.5f, (float)boardWidth + 4, (float)boardHeight / 2 - 0.5f);
+        mainCamera.position = new Vector3((float)boardWidth / 2 - 0.5f, (float)boardWidth + 6, (float)boardHeight / 2 - 0.5f);
     }
 
     public void UpdateTiles()

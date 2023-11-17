@@ -5,9 +5,10 @@ using UnityEngine.UI;
 using DG.Tweening;
 using System.Threading.Tasks;
 
-public class ButtonExample2 : MonoBehaviour
+public class PlaySolution : MonoBehaviour
 {
     Graph graph;
+    bool isPlaying = false;
 
     void Start()
     {
@@ -22,20 +23,22 @@ public class ButtonExample2 : MonoBehaviour
             Debug.Log("No solution found.");
         }
         else {
-            GridManager.Instance.UpdateTiles();
-            StartCoroutine(PlaySolution(graph.solution.myMoves));
+            if (!isPlaying) {
+                GridManager.Instance.UpdateTiles();
+                StartCoroutine(DOSolution(graph.solution.myMoves));
+            }
         }
     }
 
-    private IEnumerator PlaySolution(List<MoveCommand> moves)
+    private IEnumerator DOSolution(List<MoveCommand> moves)
     {
         List<Transform> boxes = GridManager.Instance.boxes;
         foreach (MoveCommand move in moves) {
+            isPlaying = true;
             Transform unit = move.myUnit;
             // Detect if we're moving the player or a box.
             if (move.myUnit.CompareTag("Player")) {
                 unit = GridManager.Instance.Player;
-                yield return null;
             }
             else if (move.myUnit.CompareTag("Box")) {
                 foreach (Transform box in boxes) {
@@ -48,6 +51,7 @@ public class ButtonExample2 : MonoBehaviour
             }
             Tween tween = unit.DOMove(move.myTo, 1).SetEase(Ease.InOutSine);
             yield return tween.WaitForCompletion();
+            isPlaying = false;
         }
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ButtonExample : MonoBehaviour
+public class SolveButton : MonoBehaviour
 {
     public Vertex solution;
     public List<Vector3Int> boxLocations = new();
@@ -15,7 +15,7 @@ public class ButtonExample : MonoBehaviour
     public Vector3Int playerPos = new();
     public int index = 0;
     private Graph script;
-    private float startTime = 0;
+    bool isSolving = false;
 
     void Start()
     {
@@ -26,18 +26,19 @@ public class ButtonExample : MonoBehaviour
     private void TaskOnClick()
     {
         Debug.Log("Immediate log.");
-        StartCoroutine(Search());
+        if (!isSolving) {
+            StartCoroutine(Search());
+        }
     }
     private IEnumerator Search()
     {
+        isSolving = true;
         Vector3Int playerPosition = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
         List<Transform> boxes = GridManager.Instance.boxes;
         Coroutine search = StartCoroutine(script.BreadthFirstSearch(playerPosition, boxes));
         Debug.Log("Waiting for search...");
-        if (startTime == 0) { startTime = Time.time; }
         yield return search;
-        float end = Time.time - startTime;
-        Debug.Log("Finished searching after " + end);
+        isSolving = false;
     }
 
 }
