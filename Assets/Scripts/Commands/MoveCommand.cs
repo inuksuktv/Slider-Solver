@@ -8,10 +8,11 @@ public class MoveCommand : CommandManager.ICommand
     public Vector3Int myFrom, myTo;
     public Transform myUnit;
 
-    public MoveCommand(Vector3Int start, Vector3Int end, Transform unit)
+    public MoveCommand(Vector3Int start, Vector3Int end)
     {
         myFrom = start;
         myTo = end;
+        Transform unit = GridManager.Instance.GetTileAtPosition(myFrom).transform.GetChild(0);
         myUnit = unit;
     }
 
