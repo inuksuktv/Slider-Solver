@@ -12,7 +12,7 @@ public class Graph : MonoBehaviour
     private HashSet<Vertex> visited;
     private Stack<Vertex> vertices;
     private int vertexIndex;
-    private PlayerController playerScript;
+    private PlayerController playerController;
 
     private Vector3Int currentPlayer;
     private Vector3Int goal;
@@ -24,7 +24,7 @@ public class Graph : MonoBehaviour
 
     public IEnumerator BreadthFirstSearch(Vector3Int position, List<Transform> boxList)
     {
-        playerScript = GridManager.Instance.Player.GetComponent<PlayerController>();
+        playerController = GridManager.Instance.Player.GetComponent<PlayerController>();
 
         // Store the initial game state.
         Vector3Int playerInitial = position;
@@ -76,7 +76,7 @@ public class Graph : MonoBehaviour
                 break;
             }
             // Yield to the main thread after checking 100 vertices.
-            if (vertexIndex % 100 == 0) { yield return null; }
+            //if (vertexIndex % 100 == 0) { yield return null; }
         }
         PlaceGamePieces(playerInitial, boxesInitial);
         Debug.Log("Returned with no solution after searching " + vertexIndex + " game states.");
@@ -89,11 +89,12 @@ public class Graph : MonoBehaviour
         init[1] = StartCoroutine(Vertices());
         init[2] = StartCoroutine(Visited());
 
+        // Wait for those data structures to finish initializing.
         foreach (Coroutine dataStructure in init) {
             yield return dataStructure;
         }
-        // Max Loop should only start once the adjacency list and stack of vertices have been initialized.
-        yield return StartCoroutine(MaxLoop());
+        // Then loop through the adjacency list and stack of vertices to initialize them.
+        yield return StartCoroutine(StackAndLists());
     }
 
     private IEnumerator AdjacencyList()
@@ -115,7 +116,7 @@ public class Graph : MonoBehaviour
         visited = new HashSet<Vertex>(maxVertices);
     }
 
-    private IEnumerator MaxLoop()
+    private IEnumerator StackAndLists()
     {
         yield return null;
         for (int i = 0; i < maxVertices; i++) {
@@ -128,18 +129,18 @@ public class Graph : MonoBehaviour
     }
 
 
-    private bool CheckForSolution(Vertex childVertex)
+    private bool CheckForSolution(Vertex vertex)
     {
-        MoveCommand command = childVertex.myMoves.Last();
+        MoveCommand command = vertex.myMoves.Last();
         bool isSolved = command.myUnit.CompareTag("Player") && command.myTo == goal;
         if (isSolved) {
             // Read out the solution.
-            MoveCommand[] moveArray = new MoveCommand[childVertex.myMoves.Count];
-            childVertex.myMoves.CopyTo(moveArray, 0);
+            MoveCommand[] moveArray = new MoveCommand[vertex.myMoves.Count];
+            vertex.myMoves.CopyTo(moveArray, 0);
             foreach (MoveCommand move in moveArray) {
                 Debug.Log(move.myTo);
             }
-            Debug.Log("Found a " + childVertex.myMoves.Count + "-move solution after evaluating " + childVertex.myIndex + " game states.");
+            Debug.Log("Found a " + vertex.myMoves.Count + "-move solution after evaluating " + vertex.myIndex + " game states.");
         }
         return isSolved;
     }
@@ -174,7 +175,7 @@ public class Graph : MonoBehaviour
                     break;
             }
 
-            MoveCommand command = playerScript.MoveProcessing(direction);
+            MoveCommand command = playerController.MoveProcessing(direction);
 
             // Illegal moves return null. Only legal moves get processed.
             if (command != null) {

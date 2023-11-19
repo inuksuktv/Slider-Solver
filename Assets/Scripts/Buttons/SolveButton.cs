@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using Debug = UnityEngine.Debug;
 
 public class SolveButton : MonoBehaviour
 {
@@ -25,8 +27,8 @@ public class SolveButton : MonoBehaviour
 
     private void TaskOnClick()
     {
-        Debug.Log("Immediate log.");
         if (!isSolving) {
+            Debug.Log("Starting search from current position.");
             StartCoroutine(Search());
         }
     }
@@ -35,9 +37,14 @@ public class SolveButton : MonoBehaviour
         isSolving = true;
         Vector3Int playerPosition = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
         List<Transform> boxes = GridManager.Instance.boxes;
+
+        Stopwatch sw = new();
+        sw.Start();
         Coroutine search = StartCoroutine(script.BreadthFirstSearch(playerPosition, boxes));
         Debug.Log("Waiting for search...");
         yield return search;
+        sw.Stop();
+        Debug.Log("Search elapsed time: " + sw.Elapsed);
         isSolving = false;
     }
 
