@@ -10,7 +10,7 @@ public class SlideTile : Tile
     public void BoxDetection()
     {
         BlocksMove = false;
-        foreach (Transform box in GridManager.Instance.boxes) {
+        foreach (Transform box in GridManager.Instance.Boxes) {
             if (GridManager.Instance.GetClosestCell(box.position) == GridManager.Instance.GetClosestCell(transform.position)) {
                 BlocksMove = true;
                 break;

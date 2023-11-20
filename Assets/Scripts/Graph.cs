@@ -2,48 +2,48 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 // This class represents a directed graph using an adjacency list.
 public class Graph : MonoBehaviour
 {
-    private List<List<Vertex>> adjacency;
-    private HashSet<Vertex> visited;
-    private Stack<Vertex> vertices;
-    private int vertexIndex;
-    private PlayerController playerController;
+    [SerializeField] private int _maxVertices;
+    public Vertex Origin { get; private set; }
+    public Vertex Solution { get; private set; }
 
-    private Vector3Int currentPlayer;
-    private Vector3Int goal;
-    private List<Vector3Int> boxLocations;
-    private Vector3Int direction;
-    public Vertex origin, solution;
+    private List<List<Vertex>> _adjacency;
+    private HashSet<Vertex> _visited;
+    private Stack<Vertex> _vertices;
+    private int _vertexIndex;
+    private int _moveCount;
+    private PlayerController _playerController;
 
-    [SerializeField] private int maxVertices;
+    private Vector3Int _currentPlayer;
+    private Vector3Int _goal;
+    private List<Vector3Int> _boxLocations;
+    private Vector3Int _direction;
 
     public IEnumerator BreadthFirstSearch(Vector3Int position, List<Transform> boxList)
     {
-        playerController = GridManager.Instance.Player.GetComponent<PlayerController>();
+        _playerController = GridManager.Instance.Player.GetComponent<PlayerController>();
 
         // Store the initial game state.
         Vector3Int playerInitial = position;
-        goal = GridManager.Instance.GetClosestCell(GridManager.Instance.Goal.position);
+        _goal = GridManager.Instance.GetClosestCell(GridManager.Instance.Goal.position);
         List<Vector3Int> boxesInitial = new();
         foreach (Transform box in boxList) {
             boxesInitial.Add(GridManager.Instance.GetClosestCell(box.position));
         }
 
-        // Initialize data structures for the search. I use an adjacency list, a hashset to track visited vertices, a stack of initialized vertices, and a queue.
+        // Initialize data structures for the search.
         yield return StartCoroutine(InitializeDataStructuresWithCoroutines());
-        
 
         // Write the starting vertex's data, visit it, and queue it for search.
-        Vertex start = vertices.Pop();
-        vertexIndex = 0;
-        start.LateConstructor(vertexIndex, playerInitial, boxesInitial);
-        origin = start;
-        visited.Add(start);
+        Vertex start = _vertices.Pop();
+        _vertexIndex = 0;
+        start.LateConstructor(playerInitial, boxesInitial);
+        Origin = start;
+        _visited.Add(start);
 
         Queue<Vertex> search = new();
         search.Enqueue(start);
@@ -52,34 +52,35 @@ public class Graph : MonoBehaviour
         while (search.Count > 0) {
             // Dequeue the next vertex and read its game state.
             Vertex parent = search.Dequeue();
-            currentPlayer = parent.myPlayerLocation;
-            boxLocations = parent.sortedBoxes;
+            _currentPlayer = parent.PlayerLocation;
+            _boxLocations = parent.Boxes;
 
             // Populate the adjacency list for the current vertex by trying to move in each direction.
             TryMoves(parent);
 
-            foreach (Vertex child in adjacency[parent.myIndex]) {
+            foreach (Vertex child in _adjacency[parent.Index]) {
                 // Return if the player arrived at the goal.
                 if (CheckForSolution(child)) {
-                    PlaceGamePieces(playerInitial, boxesInitial);
-                    solution = child;
+                    GridManager.Instance.SetGameboard(playerInitial, boxesInitial);
+                    Solution = child;
                     yield break;
                 }
-                // Check if the vertex is in the hashset to see if the game state has been visited previously. If it's new, add it and queue it for search.
-                if (!visited.Contains(child)) {
-                    visited.Add(child);
+                // Check if the vertex is in the hashset to see if the game state has been visited previously.
+                if (!_visited.Contains(child)) {
+                    _visited.Add(child);
                     search.Enqueue(child);
                 }
             }
-            // If we hit the set maximum search length, break out of the search.
-            if (vertexIndex > maxVertices - 5) {
+            // If we hit the set maximum search, break out of the search.
+            if (_vertexIndex > _maxVertices - 5) {
+                Debug.Log("No solution exists less than " + _moveCount + " moves.");
                 break;
             }
-            // Yield to the main thread after checking 100 vertices.
-            //if (vertexIndex % 100 == 0) { yield return null; }
+            // Yield to the main thread after doing a chunk of work.
+            if (_vertexIndex % 100 == 0) { yield return null; }
         }
-        PlaceGamePieces(playerInitial, boxesInitial);
-        Debug.Log("Returned with no solution after searching " + vertexIndex + " game states.");
+        GridManager.Instance.SetGameboard(playerInitial, boxesInitial);
+        Debug.Log("Returned with no solution after searching " + _vertexIndex + " game states.");
     }
 
     private IEnumerator InitializeDataStructuresWithCoroutines()
@@ -101,46 +102,47 @@ public class Graph : MonoBehaviour
     {
 
         yield return null;
-        adjacency = new List<List<Vertex>>(maxVertices);
+        _adjacency = new List<List<Vertex>>(_maxVertices);
     }
 
     private IEnumerator Vertices()
     {
         yield return null;
-        vertices = new(maxVertices);
+        _vertices = new(_maxVertices);
     }
 
     private IEnumerator Visited()
     {
         yield return null;
-        visited = new HashSet<Vertex>(maxVertices);
+        _visited = new HashSet<Vertex>(_maxVertices);
     }
 
     private IEnumerator StackAndLists()
     {
         yield return null;
-        for (int i = 0; i < maxVertices; i++) {
+        for (int i = 0; i < _maxVertices; i++) {
             List<Vertex> list = new(4);
-            adjacency.Add(list);
+            _adjacency.Add(list);
 
             Vertex v = new();
-            vertices.Push(v);
+            _vertices.Push(v);
         }
     }
 
 
     private bool CheckForSolution(Vertex vertex)
     {
-        MoveCommand command = vertex.myMoves.Last();
-        bool isSolved = command.myUnit.CompareTag("Player") && command.myTo == goal;
+        MoveCommand command = vertex.Moves.Last();
+        bool isSolved = command.Unit.CompareTag("Player") && command.To == _goal;
         if (isSolved) {
-            // Read out the solution.
-            MoveCommand[] moveArray = new MoveCommand[vertex.myMoves.Count];
-            vertex.myMoves.CopyTo(moveArray, 0);
+            // Log the solution.
+            _moveCount = vertex.Moves.Count;
+            MoveCommand[] moveArray = new MoveCommand[_moveCount];
+            vertex.Moves.CopyTo(moveArray, 0);
             foreach (MoveCommand move in moveArray) {
-                Debug.Log(move.myTo);
+                Debug.Log(move.To);
             }
-            Debug.Log("Found a " + vertex.myMoves.Count + "-move solution after evaluating " + vertex.myIndex + " game states.");
+            Debug.Log("Found a " + vertex.Moves.Count + "-move solution after evaluating " + vertex.Index + " game states.");
         }
         return isSolved;
     }
@@ -150,7 +152,7 @@ public class Graph : MonoBehaviour
     {
         GridManager.Instance.Player.position = playerFromVertex;
         for (int i = 0; i < boxLocations.Count; i++) {
-            GridManager.Instance.boxes[i].position = boxLocations[i];
+            GridManager.Instance.Boxes[i].position = boxLocations[i];
         }
         GridManager.Instance.UpdateTiles();
     }
@@ -158,41 +160,42 @@ public class Graph : MonoBehaviour
     private void TryMoves(Vertex parent)
     {
         for (int moveIndex = 0; moveIndex < 4; moveIndex++) {
-            PlaceGamePieces(currentPlayer, boxLocations);
+            GridManager.Instance.SetGameboard(_currentPlayer, _boxLocations);
 
             switch (moveIndex) {
                 case 0:
-                    direction = Vector3Int.forward;
+                    _direction = Vector3Int.forward;
                     break;
                 case 1:
-                    direction = Vector3Int.back;
+                    _direction = Vector3Int.back;
                     break;
                 case 2:
-                    direction = Vector3Int.left;
+                    _direction = Vector3Int.left;
                     break;
                 case 3:
-                    direction = Vector3Int.right;
+                    _direction = Vector3Int.right;
                     break;
             }
 
-            MoveCommand command = playerController.MoveProcessing(direction);
+            MoveCommand command = _playerController.MoveProcessing(_direction);
 
             // Illegal moves return null. Only legal moves get processed.
             if (command != null) {
                 // Pushing a box onto the goal tile means there's no solution, so don't consider that move.
-                Transform unit = GridManager.Instance.GetTileAtPosition(command.myFrom).transform.GetChild(0);
-                bool isUnsolvable = unit.CompareTag("Box") && command.myTo == goal;
+                Transform unit = GridManager.Instance.GetTileAtPosition(command.From).transform.GetChild(0);
+                bool isUnsolvable = unit.CompareTag("Box") && command.To == _goal;
                 if (isUnsolvable) { continue; }
 
                 // Record the new game vertex and update the adjacency list.
-                GridManager.Instance.MoveUnit(unit, command.myTo);
+                GridManager.Instance.MoveUnit(unit, command.To);
                 GridManager.Instance.UpdateTiles();
 
-                Vertex childVertex = vertices.Pop();
-                vertexIndex++;
-                childVertex.LateConstructor(vertexIndex, parent, command);
+                Vertex childVertex = _vertices.Pop();
+                _vertexIndex++;
+                childVertex.LateConstructor(_vertexIndex, parent, command);
+                _moveCount = childVertex.Moves.Count;
 
-                adjacency[parent.myIndex].Add(childVertex);
+                _adjacency[parent.Index].Add(childVertex);
             }
         }
     }

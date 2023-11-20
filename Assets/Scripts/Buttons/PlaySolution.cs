@@ -3,55 +3,54 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
-using System.Threading.Tasks;
 
 public class PlaySolution : MonoBehaviour
 {
-    Graph graph;
-    bool isPlaying = false;
+    Graph _graphScript;
+    bool _isPlaying = false;
 
     void Start()
     {
         GetComponent<Button>().onClick.AddListener(TaskOnClick);
-        graph = GridManager.Instance.GetComponent<Graph>();
+        _graphScript = GridManager.Instance.GetComponent<Graph>();
     }
 
     private void TaskOnClick()
     {
         // Play out the solution.
-        if (graph.solution is null) {
+        if (_graphScript.Solution is null) {
             Debug.Log("No solution found.");
         }
         else {
-            if (!isPlaying) {
+            if (!_isPlaying) {
                 GridManager.Instance.UpdateTiles();
-                StartCoroutine(DOSolution(graph.solution.myMoves));
+                StartCoroutine(DOSolution(_graphScript.Solution.Moves));
             }
         }
     }
 
     private IEnumerator DOSolution(List<MoveCommand> moves)
     {
-        List<Transform> boxes = GridManager.Instance.boxes;
+        List<Transform> boxes = GridManager.Instance.Boxes;
         foreach (MoveCommand move in moves) {
-            isPlaying = true;
-            Transform unit = move.myUnit;
+            _isPlaying = true;
+            Transform unit = move.Unit;
             // Detect if we're moving the player or a box.
-            if (move.myUnit.CompareTag("Player")) {
+            if (move.Unit.CompareTag("Player")) {
                 unit = GridManager.Instance.Player;
             }
-            else if (move.myUnit.CompareTag("Box")) {
+            else if (move.Unit.CompareTag("Box")) {
                 foreach (Transform box in boxes) {
                     Vector3Int boxPos = GridManager.Instance.GetClosestCell(box.position);
-                    if (boxPos == move.myFrom) {
+                    if (boxPos == move.From) {
                         unit = box;
                         break;
                     }
                 }
             }
-            Tween tween = unit.DOMove(move.myTo, 1).SetEase(Ease.InOutSine);
+            Tween tween = unit.DOMove(move.To, 1).SetEase(Ease.InOutSine);
             yield return tween.WaitForCompletion();
-            isPlaying = false;
+            _isPlaying = false;
         }
     }
 }

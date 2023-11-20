@@ -5,13 +5,9 @@ using UnityEngine;
 public class GridManager : MonoBehaviour
 {
     public static GridManager Instance { get; private set; }
-    public Grid Grid { get; private set; }
     public Transform Goal { get; private set; }
     public Transform Player { get; private set; }
-    public List<Transform> boxes = new();
-    public Vector3Int startLocation = new();
-    public List<Vector3Int> boxLocations = new();
-
+    public List<Transform> Boxes { get; private set; }
 
     private enum GoalWall
     {
@@ -28,9 +24,12 @@ public class GridManager : MonoBehaviour
     [SerializeField] private GameObject boxPrefab;
     [SerializeField] private GameObject playerPrefab;
 
-    private Transform mainCamera;
-    private Dictionary<Vector3Int, Tile> tiles = new();
-    private List<SlideTile> slideTiles = new();
+    private Vector3Int _startLocation;
+    private Grid _grid;
+    private Transform _mainCamera;
+    private readonly Dictionary<Vector3Int, Tile> _tiles = new();
+    private readonly List<SlideTile> _slideTiles = new();
+    private List<Vector3Int> _boxStartLocations;
 
     private readonly float tileOffset = -0.6f;
 
@@ -42,9 +41,12 @@ public class GridManager : MonoBehaviour
 
     private void Start()
     {
-        mainCamera = GameObject.Find("Main Camera").transform;
-        Grid = GetComponent<Grid>();
+        _mainCamera = GameObject.Find("Main Camera").transform;
+        _grid = GetComponent<Grid>();
 
+        Boxes = new();
+        _startLocation = new();
+        _boxStartLocations = new();
         PrepareGameboard();
     }
 
@@ -53,18 +55,18 @@ public class GridManager : MonoBehaviour
         for (int i = 0; i < transform.childCount; i++) {
             Destroy(transform.GetChild(i).gameObject);
         }
-        foreach (Transform box in boxes) {
+        foreach (Transform box in Boxes) {
             Destroy(box.gameObject);
         }
         Destroy(Player.gameObject);
-        tiles.Clear();
-        boxes.Clear();
-        boxLocations.Clear();
+        _tiles.Clear();
+        Boxes.Clear();
+        _boxStartLocations.Clear();
     }
 
     public Tile GetTileAtPosition(Vector3Int position)
     {
-        if (tiles.TryGetValue(position, out var tile)) {
+        if (_tiles.TryGetValue(position, out var tile)) {
             return tile;
         }
         return null;
@@ -72,7 +74,7 @@ public class GridManager : MonoBehaviour
 
     public Vector3Int GetClosestCell(Vector3 position)
     {
-        Vector3Int closestCell = Grid.WorldToCell(position);
+        Vector3Int closestCell = _grid.WorldToCell(position);
         return closestCell;
     }
 
@@ -89,15 +91,33 @@ public class GridManager : MonoBehaviour
         GenerateBoxes();
         GeneratePlayer();
         // Move the camera over the center of the board.
-        mainCamera.position = new Vector3((float)boardWidth / 2 - 0.5f, (float)boardWidth + 6, (float)boardHeight / 2 - 0.5f);
+        _mainCamera.position = new Vector3((float)boardWidth / 2 - 0.5f, (float)boardWidth + 6, (float)boardHeight / 2 - 0.5f);
+    }
+
+    public void ResetGameboard()
+    {
+        Player.position = _startLocation;
+        for (int i = 0; i < _boxStartLocations.Count; i++) {
+            Boxes[i].transform.position = _boxStartLocations[i];
+        }
+        UpdateTiles();
+    }
+
+    public void SetGameboard(Vector3Int player, List<Vector3Int> boxes)
+    {
+        Player.position = player;
+        for (int i = 0; i < boxes.Count; i++) {
+            Boxes[i].transform.position = boxes[i];
+        }
+        UpdateTiles();
     }
 
     public void UpdateTiles()
     {
-        foreach (SlideTile tile in slideTiles) {
+        foreach (SlideTile tile in _slideTiles) {
             tile.BlocksMove = false;
         }
-        foreach (Transform box in boxes) {
+        foreach (Transform box in Boxes) {
             Tile nearestTile = GetTileAtPosition(GetClosestCell(box.position));
             if (nearestTile != null) {
                 box.parent = nearestTile.transform;
@@ -120,7 +140,7 @@ public class GridManager : MonoBehaviour
             Vector3Int newBoxPosition = new(x, 0, z);
 
             bool isNewLocation = true;
-            foreach (Transform box in boxes) {
+            foreach (Transform box in Boxes) {
                 if (GetClosestCell(box.position) == newBoxPosition) {
                     isNewLocation = false;
                     Debug.Log("Box location is taken, so instantiation was skipped.");
@@ -128,8 +148,8 @@ public class GridManager : MonoBehaviour
                 }
             }
             if (isNewLocation) {
-                boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity).transform);
-                boxLocations.Add(newBoxPosition);
+                Boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity).transform);
+                _boxStartLocations.Add(newBoxPosition);
             }
         }
         UpdateTiles();
@@ -182,13 +202,13 @@ public class GridManager : MonoBehaviour
         Tile tile = Instantiate(selectedTile, position, Quaternion.identity);
         tile.name = $"Tile {position.x} {position.z}";
         tile.transform.parent = transform;
-        tiles.Add(GetClosestCell(position), tile);
+        _tiles.Add(GetClosestCell(position), tile);
 
         // If it's a slide tile, alternate the color to look like a checkerboard.
         if (tile.TryGetComponent<SlideTile>(out var slideScript)) {
             bool isOffset = (position.x + position.z) % 2 == 1;
             slideScript.InitializeColor(isOffset);
-            slideTiles.Add(slideScript);
+            _slideTiles.Add(slideScript);
         }
         return tile.transform;
     }
@@ -197,19 +217,19 @@ public class GridManager : MonoBehaviour
     {
         Tile tile = GetTileAtPosition(GetClosestCell(tilePosition));
         if (tile != null) {
-            tiles.Remove(GetClosestCell(tilePosition));
+            _tiles.Remove(GetClosestCell(tilePosition));
             Destroy(tile.gameObject);
         }
     }
 
     private void GeneratePlayer()
     {
-        Tile[] openTiles = new Tile[tiles.Count];
+        Tile[] openTiles = new Tile[_tiles.Count];
         Vector3 position = new();
 
         // Load into the array all tiles that are open. Boxes have already been placed and Slide Tiles updated.
         int i = 0;
-        foreach (var tile in tiles) {
+        foreach (var tile in _tiles) {
             Tile script = tile.Value;
             if (script.gameObject.CompareTag("Slide") && !tile.Value.BlocksMove) {
                 openTiles[i] = tile.Value;
@@ -225,14 +245,14 @@ public class GridManager : MonoBehaviour
                 break;
             }
         }
-        startLocation = GetClosestCell(position);
-        Player = Instantiate(playerPrefab, startLocation, Quaternion.identity).transform;
-        Player.parent = GetTileAtPosition(startLocation).transform;
+        _startLocation = GetClosestCell(position);
+        Player = Instantiate(playerPrefab, _startLocation, Quaternion.identity).transform;
+        Player.parent = GetTileAtPosition(_startLocation).transform;
     }
 
     private void GenerateSlideTiles()
     {
-        slideTiles.Clear();
+        _slideTiles.Clear();
         for (int z = 0; z < boardHeight; z++) {
             for (int x = 0; x < boardWidth; x++) {
                 Vector3 position = new(x, 0, z);

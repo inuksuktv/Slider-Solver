@@ -13,7 +13,7 @@ public class CommandManager : MonoBehaviour
 
     public static CommandManager Instance { get; private set; }
 
-    private Stack<ICommand> commands = new();
+    private readonly Stack<ICommand> _commands = new();
 
     private void Awake()
     {
@@ -24,16 +24,16 @@ public class CommandManager : MonoBehaviour
     public void AddCommand(ICommand command)
     {
         command.Execute();
-        commands.Push(command);
+        _commands.Push(command);
     }
 
     public void Undo()
     {
-        if (commands.Count == 0) {
+        if (_commands.Count == 0) {
             return;
         }
 
-        ICommand command = commands.Pop();
+        ICommand command = _commands.Pop();
         command.Undo();
     }
 }

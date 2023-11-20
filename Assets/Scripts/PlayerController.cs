@@ -5,54 +5,49 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    private PlayerInput playerInput;
-    private InputAction upAction;
-    private InputAction downAction;
-    private InputAction leftAction;
-    private InputAction rightAction;
-    private InputAction backAction;
+    private PlayerInput _playerInput;
+    private InputAction _upAction, _downAction, _leftAction, _rightAction, _backAction;
 
-    public Vector3Int currentCell, targetCell;
-    public Transform unit;
+    private Vector3Int _currentCell, _targetCell;
 
     private void Awake()
     {
-        playerInput = GetComponent<PlayerInput>();
-        upAction = playerInput.actions["Up"];
-        downAction = playerInput.actions["Down"];
-        leftAction = playerInput.actions["Left"];
-        rightAction = playerInput.actions["Right"];
-        backAction = playerInput.actions["Back"];
+        _playerInput = GetComponent<PlayerInput>();
+        _upAction = _playerInput.actions["Up"];
+        _downAction = _playerInput.actions["Down"];
+        _leftAction = _playerInput.actions["Left"];
+        _rightAction = _playerInput.actions["Right"];
+        _backAction = _playerInput.actions["Back"];
     }
 
     private void OnEnable()
     {
-        upAction.performed += Up;
-        downAction.performed += Down;
-        leftAction.performed += Left;
-        rightAction.performed += Right;
-        backAction.performed += Back;
+        _upAction.performed += Up;
+        _downAction.performed += Down;
+        _leftAction.performed += Left;
+        _rightAction.performed += Right;
+        _backAction.performed += Back;
 
-        upAction.Enable();
-        downAction.Enable();
-        leftAction.Enable();
-        rightAction.Enable();
-        backAction.Enable();
+        _upAction.Enable();
+        _downAction.Enable();
+        _leftAction.Enable();
+        _rightAction.Enable();
+        _backAction.Enable();
     }
 
     private void OnDisable()
     {
-        upAction.performed -= Up;
-        downAction.performed -= Down;
-        leftAction.performed -= Left;
-        rightAction.performed -= Right;
-        backAction.performed += Back;
+        _upAction.performed -= Up;
+        _downAction.performed -= Down;
+        _leftAction.performed -= Left;
+        _rightAction.performed -= Right;
+        _backAction.performed += Back;
 
-        upAction.Disable();
-        downAction.Disable();
-        leftAction.Disable();
-        rightAction.Disable();
-        backAction.Disable();
+        _upAction.Disable();
+        _downAction.Disable();
+        _leftAction.Disable();
+        _rightAction.Disable();
+        _backAction.Disable();
     }
 
     private void Up(InputAction.CallbackContext context)
@@ -104,9 +99,9 @@ public class PlayerController : MonoBehaviour
         // Search in the direction of the move until a tile that blocks movement is found.
         int maxMove = Mathf.Max(GridManager.Instance.boardWidth + 1, GridManager.Instance.boardHeight + 1);
         for (int i = 1; i < maxMove + 1; i++) {
-            Tile nextTile = GridManager.Instance.GetTileAtPosition(currentCell + direction * i);
+            Tile nextTile = GridManager.Instance.GetTileAtPosition(_currentCell + direction * i);
             if (nextTile.BlocksMove) {
-                targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - direction);
+                _targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - direction);
                 break;
             }
         }
@@ -115,18 +110,21 @@ public class PlayerController : MonoBehaviour
     public void GetActiveUnit(Vector3Int direction)
     {
         // The player is the active unit by default. If the player pushed a box, the box is the active unit instead.
-        currentCell = GridManager.Instance.GetClosestCell(transform.position);
-        targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
-        unit = transform;
+        _currentCell = GridManager.Instance.GetClosestCell(transform.position);
+        _targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
 
-        // This is able to shove a stack of boxes but it only works if the subsequent boxes in the stack are evaluated later in the loop.
-        foreach (Transform box in GridManager.Instance.boxes) {
-            if (targetCell == GridManager.Instance.GetClosestCell(box.position)) {
-                currentCell = targetCell;
-                targetCell = GridManager.Instance.GetClosestCell(box.position) + direction;
-                unit = box;
-            }
+        // Check for a box at the target tile.
+        Transform tile = GridManager.Instance.GetTileAtPosition(_targetCell).transform;
+        if (tile.childCount > 0 && tile.GetChild(0).CompareTag("Box")) {
+            _currentCell = _targetCell;
+            _targetCell = GridManager.Instance.GetClosestCell(tile.position + direction);
         }
+        //foreach (Transform box in GridManager.Instance.boxes) {
+        //    if (_targetCell == GridManager.Instance.GetClosestCell(box.position)) {
+        //        _currentCell = _targetCell;
+        //        _targetCell = GridManager.Instance.GetClosestCell(box.position) + direction;
+        //    }
+        //}
     }
 
     public MoveCommand MoveProcessing(Vector3Int direction)
@@ -134,14 +132,14 @@ public class PlayerController : MonoBehaviour
         GetActiveUnit(direction);
 
         // Return without effect if the move is illegal.
-        Tile testTile = GridManager.Instance.GetTileAtPosition(targetCell);
+        Tile testTile = GridManager.Instance.GetTileAtPosition(_targetCell);
         if (testTile == null || testTile.BlocksMove) {
             return null;
         }
 
         FindDestination(direction);
 
-        MoveCommand command = new(currentCell, targetCell);
+        MoveCommand command = new(_currentCell, _targetCell);
         return command;
     }
 }
