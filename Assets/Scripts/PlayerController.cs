@@ -88,16 +88,11 @@ public class PlayerController : MonoBehaviour
         CommandManager.Instance.Undo();
     }
 
-    private void Update()
-    {
-        if (GridManager.Instance.GetClosestCell(transform.position) == GridManager.Instance.GetClosestCell(GridManager.Instance.Goal.position)) {
-            Debug.Log("You win the game!");
-        }
-    }
+    
     public void FindDestination(Vector3Int direction)
     {
         // Search in the direction of the move until a tile that blocks movement is found.
-        int maxMove = Mathf.Max(GridManager.Instance.boardWidth + 1, GridManager.Instance.boardHeight + 1);
+        int maxMove = Mathf.Max(GridManager.Instance.BoardWidth + 1, GridManager.Instance.BoardHeight + 1);
         for (int i = 1; i < maxMove + 1; i++) {
             Tile nextTile = GridManager.Instance.GetTileAtPosition(_currentCell + direction * i);
             if (nextTile.BlocksMove) {
@@ -119,12 +114,6 @@ public class PlayerController : MonoBehaviour
             _currentCell = _targetCell;
             _targetCell = GridManager.Instance.GetClosestCell(tile.position + direction);
         }
-        //foreach (Transform box in GridManager.Instance.boxes) {
-        //    if (_targetCell == GridManager.Instance.GetClosestCell(box.position)) {
-        //        _currentCell = _targetCell;
-        //        _targetCell = GridManager.Instance.GetClosestCell(box.position) + direction;
-        //    }
-        //}
     }
 
     public MoveCommand MoveProcessing(Vector3Int direction)
