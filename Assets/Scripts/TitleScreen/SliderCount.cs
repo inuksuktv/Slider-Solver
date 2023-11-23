@@ -24,6 +24,7 @@ public class SliderCount : MonoBehaviour
         }
         UpdateText();
         _slider.onValueChanged.AddListener(delegate { UpdateText(); });
+        _slider.onValueChanged.AddListener(delegate { TitleGrid.Instance.UpdateValues(); });
     }
 
     void UpdateText()

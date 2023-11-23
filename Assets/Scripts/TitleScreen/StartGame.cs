@@ -16,9 +16,7 @@ public class StartGame : MonoBehaviour
         SliderSettings.Values[0] = TitleGrid.Instance.boardWidth;
         SliderSettings.Values[1] = TitleGrid.Instance.boardHeight;
         SliderSettings.Values[2] = TitleGrid.Instance.boxCount;
-        foreach (var setting in SliderSettings.Values) {
-            Debug.Log(setting);
-        }
-        SceneManager.LoadScene("SampleScene", LoadSceneMode.Single);
+        
+        SceneManager.LoadScene("GameScreen", LoadSceneMode.Single);
     }
 }

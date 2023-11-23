@@ -29,11 +29,12 @@ public class GridManager : MonoBehaviour
     private Vector3Int _startLocation;
     private Grid _grid;
     private Transform _mainCamera;
+    private Transform _background;
     private readonly Dictionary<Vector3Int, Tile> _tiles = new();
     private readonly List<SlideTile> _slideTiles = new();
     private List<Vector3Int> _boxStartLocations;
 
-    private readonly float tileOffset = -0.6f;
+    private readonly float _tileOffset = -0.6f;
 
     private void Awake()
     {
@@ -45,6 +46,7 @@ public class GridManager : MonoBehaviour
     {
         _mainCamera = GameObject.Find("Main Camera").transform;
         _grid = GetComponent<Grid>();
+        _background = GameObject.Find("Background").transform;
 
         Boxes = new();
         _startLocation = new();
@@ -95,9 +97,16 @@ public class GridManager : MonoBehaviour
         GenerateGoalTile();
         GenerateBoxes();
         GeneratePlayer();
-        // Move the camera over the center of the board.
-        var position = new Vector3((float)BoardWidth / 2 - 0.5f, (float)BoardWidth + 6, (float)BoardHeight / 2 - 0.5f);
+
+        // Move the camera over the center of the board and offset it slightly to place board in the desired location on screen.
+        float max = Mathf.Max(BoardWidth, BoardHeight);
+        Vector3 position = new(BoardWidth * 0.5f - 0.5f, max + 6, BoardHeight * 0.5f - 0.5f - (max * 0.125f));
         _mainCamera.SetPositionAndRotation(position, Quaternion.Euler(90, 0, 0));
+
+        // Also set the background underneath the camera.
+        Vector3 backgroundPos = position;
+        backgroundPos.y = _tileOffset - 1;
+        _background.position = backgroundPos;
     }
 
     public void ResetGameboard()
@@ -203,7 +212,7 @@ public class GridManager : MonoBehaviour
 
     private Transform CreateTile(Tile selectedTile, Vector3 position)
     {
-        position.y = tileOffset + selectedTile.transform.localScale.y / 2;
+        position.y = _tileOffset + selectedTile.transform.localScale.y / 2;
 
         Tile tile = Instantiate(selectedTile, position, Quaternion.identity);
         tile.name = $"Tile {position.x} {position.z}";

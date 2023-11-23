@@ -68,10 +68,6 @@ public class TitleGrid : MonoBehaviour
     private void Update()
     {
         transform.RotateAround(_boardCentre, Vector3.up, _rotationSpeed * Time.deltaTime);
-
-        boardHeight = (int)_heightSlider.value;
-        boardWidth = (int)_widthSlider.value;
-        boxCount = (int)_boxSlider.value;
     }
 
     public void DestroyGameboard()
@@ -147,6 +143,13 @@ public class TitleGrid : MonoBehaviour
                 Player.parent = playerTile.transform;
             }
         }
+    }
+
+    public void UpdateValues()
+    {
+        boardHeight = (int)_heightSlider.value;
+        boardWidth = (int)_widthSlider.value;
+        boxCount = (int)_boxSlider.value;
     }
 
     private Transform CreateTile(Tile selectedTile, Vector3 position)
