@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     private PlayerInput _playerInput;
-    private InputAction _upAction, _downAction, _leftAction, _rightAction, _backAction;
+    private InputAction _upAction, _downAction, _leftAction, _rightAction, _backAction, _pauseAction;
 
     private Vector3Int _currentCell, _targetCell;
 
@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
         _leftAction = _playerInput.actions["Left"];
         _rightAction = _playerInput.actions["Right"];
         _backAction = _playerInput.actions["Back"];
+        _pauseAction = _playerInput.actions["Escape"];
     }
 
     private void OnEnable()
@@ -27,12 +28,14 @@ public class PlayerController : MonoBehaviour
         _leftAction.performed += Left;
         _rightAction.performed += Right;
         _backAction.performed += Back;
+        _pauseAction.performed += Pause;
 
         _upAction.Enable();
         _downAction.Enable();
         _leftAction.Enable();
         _rightAction.Enable();
         _backAction.Enable();
+        _pauseAction.Enable();
     }
 
     private void OnDisable()
@@ -41,13 +44,15 @@ public class PlayerController : MonoBehaviour
         _downAction.performed -= Down;
         _leftAction.performed -= Left;
         _rightAction.performed -= Right;
-        _backAction.performed += Back;
+        _backAction.performed -= Back;
+        _pauseAction.performed -= Pause;
 
         _upAction.Disable();
         _downAction.Disable();
         _leftAction.Disable();
         _rightAction.Disable();
         _backAction.Disable();
+        _pauseAction.Disable();
     }
 
     private void Up(InputAction.CallbackContext context)
@@ -88,16 +93,19 @@ public class PlayerController : MonoBehaviour
         CommandManager.Instance.Undo();
     }
 
-    private void Update()
+    private void Pause(InputAction.CallbackContext context)
     {
-        if (GridManager.Instance.GetClosestCell(transform.position) == GridManager.Instance.GetClosestCell(GridManager.Instance.Goal.position)) {
-            Debug.Log("You win the game!");
+        var pauseMenu = GameObject.Find("Canvas").transform.GetComponentInChildren<PauseMenu>(true);
+        if (pauseMenu != null) {
+            pauseMenu.TogglePauseMenu();
         }
     }
+
+
     public void FindDestination(Vector3Int direction)
     {
         // Search in the direction of the move until a tile that blocks movement is found.
-        int maxMove = Mathf.Max(GridManager.Instance.boardWidth + 1, GridManager.Instance.boardHeight + 1);
+        int maxMove = Mathf.Max(GridManager.Instance.BoardWidth + 1, GridManager.Instance.BoardHeight + 1);
         for (int i = 1; i < maxMove + 1; i++) {
             Tile nextTile = GridManager.Instance.GetTileAtPosition(_currentCell + direction * i);
             if (nextTile.BlocksMove) {
@@ -119,12 +127,6 @@ public class PlayerController : MonoBehaviour
             _currentCell = _targetCell;
             _targetCell = GridManager.Instance.GetClosestCell(tile.position + direction);
         }
-        //foreach (Transform box in GridManager.Instance.boxes) {
-        //    if (_targetCell == GridManager.Instance.GetClosestCell(box.position)) {
-        //        _currentCell = _targetCell;
-        //        _targetCell = GridManager.Instance.GetClosestCell(box.position) + direction;
-        //    }
-        //}
     }
 
     public MoveCommand MoveProcessing(Vector3Int direction)
