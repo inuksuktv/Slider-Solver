@@ -19,7 +19,12 @@ public class MoveCommand : CommandManager.ICommand
 
     public void Execute()
     {
-        Unit.DOMove(To, 1).OnComplete(() => { GridManager.Instance.UpdateTiles(); });
+        CommandManager.Instance.UnitIsMoving = true;
+        Unit.DOMove(To, 1).OnComplete(() =>
+        {
+            GridManager.Instance.UpdateTiles();
+            CommandManager.Instance.UnitIsMoving = false;
+        });
     }
 
     public void Undo()

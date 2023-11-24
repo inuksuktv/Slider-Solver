@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour
     private InputAction _upAction, _downAction, _leftAction, _rightAction, _backAction, _pauseAction;
 
     private Vector3Int _currentCell, _targetCell;
+    private bool _inputIsBlocked = false;
 
     private void Awake()
     {
@@ -55,42 +56,63 @@ public class PlayerController : MonoBehaviour
         _pauseAction.Disable();
     }
 
+    private void Update()
+    {
+        if (CommandManager.Instance != null && GridManager.Instance != null) {
+            if (CommandManager.Instance.UnitIsMoving || GridManager.Instance.SearchIsRunning) {
+                _inputIsBlocked = true;
+            }
+            else {
+                _inputIsBlocked = false;
+            }
+        }
+    }
+
     private void Up(InputAction.CallbackContext context)
     {
-        var command = MoveProcessing(Vector3Int.forward);
-        if (command != null) {
-            CommandManager.Instance.AddCommand(command);
+        if (!_inputIsBlocked) {
+            var command = MoveProcessing(Vector3Int.forward);
+            if (command != null) {
+                CommandManager.Instance.AddCommand(command);
+            }
         }
     }
 
     private void Down(InputAction.CallbackContext context)
     {
-        var command = MoveProcessing(Vector3Int.back);
-        if (command != null) {
-            CommandManager.Instance.AddCommand(command);
+        if (!_inputIsBlocked) {
+            var command = MoveProcessing(Vector3Int.back);
+            if (command != null) {
+                CommandManager.Instance.AddCommand(command);
+            }
         }
     }
 
     private void Left(InputAction.CallbackContext context)
     {
-        var command = MoveProcessing(Vector3Int.left);
-        if (command != null) {
-            CommandManager.Instance.AddCommand(command);
+        if (!_inputIsBlocked) {
+            var command = MoveProcessing(Vector3Int.left);
+            if (command != null) {
+                CommandManager.Instance.AddCommand(command);
+            }
         }
     }
 
     private void Right(InputAction.CallbackContext context)
     {
-        var command = MoveProcessing(Vector3Int.right);
-        if (command != null) {
-            CommandManager.Instance.AddCommand(command);
+        if (!_inputIsBlocked) {
+            var command = MoveProcessing(Vector3Int.right);
+            if (command != null) {
+                CommandManager.Instance.AddCommand(command);
+            }
         }
-
     }
 
     private void Back(InputAction.CallbackContext context)
     {
-        CommandManager.Instance.Undo();
+        if (!_inputIsBlocked) {
+            CommandManager.Instance.Undo();
+        }
     }
 
     private void Pause(InputAction.CallbackContext context)

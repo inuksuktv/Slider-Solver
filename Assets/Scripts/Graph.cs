@@ -10,6 +10,7 @@ public class Graph : MonoBehaviour
     [SerializeField] private int _maxVertices;
     public Vertex Origin { get; private set; }
     public Vertex Solution { get; private set; }
+    public bool FoundSolution = false;
 
     private List<List<Vertex>> _adjacency;
     private HashSet<Vertex> _visited;
@@ -61,8 +62,9 @@ public class Graph : MonoBehaviour
             foreach (Vertex child in _adjacency[parent.Index]) {
                 // Return if the player arrived at the goal.
                 if (CheckForSolution(child)) {
-                    GridManager.Instance.SetGameboard(playerInitial, boxesInitial);
+                    FoundSolution = true;
                     Solution = child;
+                    GridManager.Instance.SetGameboard(playerInitial, boxesInitial);
                     yield break;
                 }
                 // Check if the vertex is in the hashset to see if the game state has been visited previously.

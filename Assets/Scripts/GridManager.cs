@@ -11,6 +11,7 @@ public class GridManager : MonoBehaviour
     public int BoardHeight { get; private set; }
     public int BoardWidth { get; private set; }
     public int BoxCount { get; private set; }
+    public bool SearchIsRunning = false;
 
     private enum GoalWall
     {

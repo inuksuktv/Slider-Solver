@@ -7,7 +7,6 @@ using DG.Tweening;
 public class PlaySolution : MonoBehaviour
 {
     Graph _graphScript;
-    bool _isPlaying = false;
 
     void Start()
     {
@@ -22,7 +21,7 @@ public class PlaySolution : MonoBehaviour
             Debug.Log("No solution found.");
         }
         else {
-            if (!_isPlaying) {
+            if (!CommandManager.Instance.UnitIsMoving) {
                 GridManager.Instance.UpdateTiles();
                 StartCoroutine(DOSolution(_graphScript.Solution.Moves));
             }
@@ -32,8 +31,8 @@ public class PlaySolution : MonoBehaviour
     private IEnumerator DOSolution(List<MoveCommand> moves)
     {
         List<Transform> boxes = GridManager.Instance.Boxes;
+        CommandManager.Instance.UnitIsMoving = true;
         foreach (MoveCommand move in moves) {
-            _isPlaying = true;
             Transform unit = move.Unit;
             // Detect if we're moving the player or a box.
             if (move.Unit.CompareTag("Player")) {
@@ -50,7 +49,7 @@ public class PlaySolution : MonoBehaviour
             }
             Tween tween = unit.DOMove(move.To, 1).SetEase(Ease.InOutSine);
             yield return tween.WaitForCompletion();
-            _isPlaying = false;
         }
+        CommandManager.Instance.UnitIsMoving = false;
     }
 }

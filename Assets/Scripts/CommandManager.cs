@@ -12,6 +12,7 @@ public class CommandManager : MonoBehaviour
     }
 
     public static CommandManager Instance { get; private set; }
+    public bool UnitIsMoving = false;
 
     private readonly Stack<ICommand> _commands = new();
 
