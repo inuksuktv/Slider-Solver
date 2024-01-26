@@ -20,7 +20,7 @@ public class ResetButton : MonoBehaviour
         if (_solveButton.TryGetComponent<Image>(out var button)) {
             button.color = Color.white;
         }
-        GridManager.Instance.ResetGameboard();
+        GridManager.Instance.RequestReset();
         CommandManager.Instance.UnitIsMoving = false;
     }
 }

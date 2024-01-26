@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7721943155233661786}
   - component: {fileID: 1154256661188788847}
   m_Layer: 0
-  m_Name: MountainTile
+  m_Name: WallTile
   m_TagString: Mountain
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

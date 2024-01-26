@@ -24,7 +24,7 @@ public class GenerateButton : MonoBehaviour
         }
         DOTween.KillAll();
         GridManager.Instance.DestroyGameboard();
-        GridManager.Instance.PrepareGameboard();
+        GridManager.Instance.RequestNewGameboard();
         CommandManager.Instance.UnitIsMoving = false;
     }
 }
