@@ -21,7 +21,7 @@ public class TitleGrid : MonoBehaviour
 
     public int boardHeight, boardWidth, boxCount;
     [SerializeField] private SlideTile slidePrefab;
-    [SerializeField] private MountainTile mountainPrefab;
+    [SerializeField] private WallTile mountainPrefab;
     [SerializeField] private GoalTile goalPrefab;
     [SerializeField] private GameObject boxPrefab;
     [SerializeField] private GameObject playerPrefab;

@@ -13,6 +13,7 @@ public class GridManager : MonoBehaviour
     public int BoardWidth { get; private set; }
     public int BoxCountSelection { get; private set; }
     public bool SearchIsRunning = false;
+    public float TileOffset = -0.6f;
 
     private enum GoalWall
     {
@@ -23,71 +24,48 @@ public class GridManager : MonoBehaviour
     }
 
     [SerializeField] private SlideTile slidePrefab;
-    [SerializeField] private MountainTile wallTilePrefab;
+    [SerializeField] private WallTile wallTilePrefab;
     [SerializeField] private GoalTile goalPrefab;
     [SerializeField] private GameObject boxPrefab;
     [SerializeField] private GameObject playerPrefab;
 
     private Grid _grid;
-    private Transform _mainCamera;
-    private Transform _background;
-
     private Vector3Int _startLocation = new();
     private readonly Dictionary<Vector3Int, Tile> _tiles = new();
     private readonly List<Vector3Int> _boxStartLocations = new();
 
-    private const float _tileOffset = -0.6f;
-
-    // Singleton pattern.
     private void Awake()
     {
+        // Singleton pattern.
         if (Instance != null && Instance != this) { Destroy(this); }
         else { Instance = this; }
-    }
-
-    private void Start()
-    {
-        _mainCamera = GameObject.Find("Main Camera").transform;
-        _grid = GetComponent<Grid>();
-        _background = GameObject.Find("Background").transform;
 
         // Read game parameters from the title screen.
         BoardWidth = SliderSettings.Values[0];
         BoardHeight = SliderSettings.Values[1];
         BoxCountSelection = SliderSettings.Values[2];
+    }
+
+    private void Start()
+    {
+        _grid = GetComponent<Grid>();
 
         GenerateGameboard();
-
-        OrientCameraAndBackground();
     }
 
     private void GenerateGameboard()
     {
         // Time dependency: first Wall tiles, then the Goal tile.
-        GenerateAndInsertWalls();
-        GenerateAndInsertGoalTile();
+        GenerateWalls();
+        GenerateGoalTile();
 
         // Time dependency: first Slide Tiles, then Boxes, then the player.
-        GenerateAndInsertSlideTiles();
-        GenerateAndInsertBoxes();
-        GenerateAndInsertPlayer();
+        GenerateSlideTiles();
+        GenerateBoxes();
+        GeneratePlayer();
     }
 
-    private void OrientCameraAndBackground()
-    {
-        // The bigger the gameboard, the higher the camera is set.
-        float largerDimension = Mathf.Max(BoardWidth, BoardHeight);
-        Vector3 position = new(BoardWidth * 0.5f - 0.5f, largerDimension + 6, BoardHeight * 0.5f - 0.5f - (largerDimension * 0.125f));
-        _mainCamera.SetPositionAndRotation(position, Quaternion.Euler(90, 0, 0));
-        // TODO: instead of moving the camera farther back, scale the gameboard down.
-
-        // Also set the background underneath the camera.
-        Vector3 backgroundPosition = position;
-        backgroundPosition.y = _tileOffset - 1;
-        _background.position = backgroundPosition;
-    }
-
-    private void GenerateAndInsertWalls()
+    private void GenerateWalls()
     {
         Vector3 currentTilePosition;
 
@@ -113,7 +91,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void GenerateAndInsertGoalTile()
+    private void GenerateGoalTile()
     {
         Vector3 goalPosition = new();
         Vector3 wallPosition = new();
@@ -161,14 +139,14 @@ public class GridManager : MonoBehaviour
 
     private Transform CreateTile(Tile selectedTile, Vector3 position)
     {
-        position.y = _tileOffset + selectedTile.transform.localScale.y / 2;
+        position.y = TileOffset + selectedTile.transform.localScale.y / 2;
 
-        Tile tile = Instantiate(selectedTile, position, Quaternion.identity);
+        var tile = Instantiate(selectedTile, position, Quaternion.identity);
         tile.name = $"Tile {position.x} {position.z}";
         tile.transform.parent = transform;
         _tiles.Add(GetClosestCell(position), tile);
 
-        // If it's a slide tile, alternate the color of offset tiles to look like a checkerboard.
+        // If we're creating a slide tile, alternate the color of offset tiles to look like a checkerboard.
         if (tile.TryGetComponent<SlideTile>(out var script)) {
             bool isOffset = ((position.x + position.z) % 2) == 1;
             script.InitializeColor(isOffset);
@@ -199,7 +177,7 @@ public class GridManager : MonoBehaviour
         return null;
     }
 
-    private void GenerateAndInsertSlideTiles()
+    private void GenerateSlideTiles()
     {
         for (int z = 0; z < BoardHeight; z++) {
             for (int x = 0; x < BoardWidth; x++) {
@@ -208,7 +186,8 @@ public class GridManager : MonoBehaviour
             }
         }
     }
-    private void GenerateAndInsertBoxes()
+
+    private void GenerateBoxes()
     {
         for (int i = 0; i < BoxCountSelection; i++) {
             int x = Random.Range(0, BoardWidth);
@@ -231,28 +210,7 @@ public class GridManager : MonoBehaviour
         UpdateTiles();
     }
 
-    public void UpdateTiles()
-    {
-        foreach (var tile in _tiles.Values.OfType<SlideTile>())
-        {
-            tile.BlocksMove = false;
-        }
-
-        foreach (Transform box in Boxes)
-        { 
-            Tile nearestTile = GetTileAtPosition(GetClosestCell(box.position));
-            box.parent = nearestTile.transform;
-            nearestTile.BlocksMove = true;
-        }
-
-        // Tiles are first updated before the player is instantiated.
-        if (Player != null) {
-            Tile playerTile = GetTileAtPosition(GetClosestCell(Player.position));
-            Player.parent = playerTile.transform;
-        }
-    }
-
-    private void GenerateAndInsertPlayer()
+    private void GeneratePlayer()
     {
         List<Tile> openTiles = new(_tiles.Count);
 
@@ -267,7 +225,6 @@ public class GridManager : MonoBehaviour
 
         Tile[] array = openTiles.ToArray();
         RandomizeWithFisherYates(array);
-
         _startLocation = GetClosestCell(array[0].transform.position);
 
         Player = Instantiate(playerPrefab, _startLocation, Quaternion.identity).transform;
@@ -278,12 +235,35 @@ public class GridManager : MonoBehaviour
     {
         int count = array.Length;
 
-        while (count > 1) {
+        while (count > 1)
+        {
             int i = Random.Range(0, count--);
             (array[i], array[count]) = (array[count], array[i]);
         }
         return array;
-    }    
+    }
+
+    public void UpdateTiles()
+    {
+        foreach (var tile in _tiles.Values.OfType<SlideTile>())
+        {
+            tile.BlocksMove = false;
+        }
+
+        foreach (Transform box in Boxes)
+        { 
+            Tile nearestTile = GetTileAtPosition(GetClosestCell(box.position));
+            box.parent = nearestTile.transform;
+            nearestTile.BlocksMove = true;
+        }
+
+        // Player hasn't been instantiated yet the first time this method is called.
+        if (Player != null)
+        {
+            Tile playerTile = GetTileAtPosition(GetClosestCell(Player.position));
+            Player.parent = playerTile.transform;
+        }
+    }
 
     public void MoveUnit(Transform unit, Vector3Int target)
     {
