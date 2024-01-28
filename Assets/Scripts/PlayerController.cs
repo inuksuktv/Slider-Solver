@@ -8,7 +8,7 @@ public class PlayerController : MonoBehaviour
     private PlayerInput _playerInput;
     private InputAction _upAction, _downAction, _leftAction, _rightAction, _backAction, _pauseAction;
 
-    private Vector3Int _currentCell, _targetCell;
+    private Vector3Int _originCell, _targetCell;
     private bool _inputIsBlocked = false;
 
     private void Awake()
@@ -123,47 +123,51 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
-    public void FindDestination(Vector3Int direction)
-    {
-        // Search in the direction of the move until a tile that blocks movement is found.
-        int maxMove = Mathf.Max(GridManager.Instance.BoardWidth + 1, GridManager.Instance.BoardHeight + 1);
-        for (int i = 1; i < maxMove + 1; i++) {
-            Tile nextTile = GridManager.Instance.GetTileAtPosition(_currentCell + direction * i);
-            if (nextTile.BlocksMove) {
-                _targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - direction);
-                break;
-            }
-        }
-    }
-
-    public void GetActiveUnit(Vector3Int direction)
-    {
-        // The player is the active unit by default. If the player pushed a box, the box is the active unit instead.
-        _currentCell = GridManager.Instance.GetClosestCell(transform.position);
-        _targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
-
-        // Check for a box at the target tile.
-        Transform tile = GridManager.Instance.GetTileAtPosition(_targetCell).transform;
-        if (tile.childCount > 0 && tile.GetChild(0).CompareTag("Box")) {
-            _currentCell = _targetCell;
-            _targetCell = GridManager.Instance.GetClosestCell(tile.position + direction);
-        }
-    }
-
     public MoveCommand MoveProcessing(Vector3Int direction)
     {
-        GetActiveUnit(direction);
+        SetOriginAndTargetCells(direction);
 
-        // Return without effect if the move is illegal.
+        // Return null if the move is illegal.
         Tile testTile = GridManager.Instance.GetTileAtPosition(_targetCell);
-        if (testTile == null || testTile.BlocksMove) {
+        if (testTile == null || testTile.BlocksMove)
+        {
             return null;
         }
 
         FindDestination(direction);
 
-        MoveCommand command = new(_currentCell, _targetCell);
+        MoveCommand command = new(_originCell, _targetCell);
         return command;
+    }
+
+    private void SetOriginAndTargetCells(Vector3Int direction)
+    {
+        // The player is the active unit by default. If the player pushed a box, the box is the active unit instead.
+        _originCell = GridManager.Instance.GetClosestCell(transform.position);
+        _targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
+
+        // If the player is pushing a box, adjust so the box is the active unit.
+        Transform targetTile = GridManager.Instance.GetTileAtPosition(_targetCell).transform;
+        if ((targetTile.childCount > 0) && targetTile.GetChild(0).CompareTag("Box"))
+        {
+            _originCell = _targetCell;
+            _targetCell = GridManager.Instance.GetClosestCell(targetTile.position + direction);
+        }
+    }
+
+    private void FindDestination(Vector3Int direction)
+    {
+        // Search in the direction of the move until a tile that blocks movement is found.
+        int maxMove = Mathf.Max(GridManager.Instance.BoardWidth + 1, GridManager.Instance.BoardHeight + 1);
+        for (int i = 1; i <= maxMove; i++)
+        {
+            Tile nextTile = GridManager.Instance.GetTileAtPosition(_originCell + direction * i);
+
+            if (nextTile.BlocksMove)
+            {
+                _targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - direction);
+                break;
+            }
+        }
     }
 }

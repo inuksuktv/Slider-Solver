@@ -12,8 +12,14 @@ public class GridManager : MonoBehaviour
     public int BoardHeight { get; private set; }
     public int BoardWidth { get; private set; }
     public int BoxCountSelection { get; private set; }
-    public bool SearchIsRunning = false;
+    public bool SearchIsRunning { get; set; } = false;
     public float TileOffset = -0.6f;
+
+    [SerializeField] private SlideTile slidePrefab;
+    [SerializeField] private WallTile wallTilePrefab;
+    [SerializeField] private GoalTile goalPrefab;
+    [SerializeField] private GameObject boxPrefab;
+    [SerializeField] private GameObject playerPrefab;
 
     private enum GoalWall
     {
@@ -22,12 +28,6 @@ public class GridManager : MonoBehaviour
         Top,
         Left
     }
-
-    [SerializeField] private SlideTile slidePrefab;
-    [SerializeField] private WallTile wallTilePrefab;
-    [SerializeField] private GoalTile goalPrefab;
-    [SerializeField] private GameObject boxPrefab;
-    [SerializeField] private GameObject playerPrefab;
 
     private Grid _grid;
     private Vector3Int _startLocation = new();
@@ -53,7 +53,7 @@ public class GridManager : MonoBehaviour
         GenerateGameboard();
     }
 
-    private void GenerateGameboard()
+    public void GenerateGameboard()
     {
         // Time dependency: first Wall tiles, then the Goal tile.
         GenerateWalls();
@@ -70,22 +70,26 @@ public class GridManager : MonoBehaviour
         Vector3 currentTilePosition;
 
         // Create the bottom wall from left to right.
-        for (var x = -1; x <= BoardWidth; x++) {
+        for (var x = -1; x <= BoardWidth; x++)
+        {
             currentTilePosition = new(x, 0, -1);
             CreateTile(wallTilePrefab, currentTilePosition);
         }
         // Create the right wall from bottom to top.
-        for (var z = 0; z <= BoardHeight; z++) {
+        for (var z = 0; z <= BoardHeight; z++)
+        {
             currentTilePosition = new(BoardWidth, 0, z);
             CreateTile(wallTilePrefab, currentTilePosition);
         }
         // Create the top wall from right to left.
-        for (var x = BoardWidth - 1; x >= -1; x--) {
+        for (var x = (BoardWidth - 1); x >= -1; x--)
+        {
             currentTilePosition = new(x, 0, BoardHeight);
             CreateTile(wallTilePrefab, currentTilePosition);
         }
         // Create the left wall from top to bottom.
-        for (var z = BoardHeight - 1; z >= 0; z--) {
+        for (var z = (BoardHeight - 1); z >= 0; z--)
+        {
             currentTilePosition = new(-1, 0, z);
             CreateTile(wallTilePrefab, currentTilePosition);
         }
@@ -139,15 +143,16 @@ public class GridManager : MonoBehaviour
 
     private Transform CreateTile(Tile selectedTile, Vector3 position)
     {
-        position.y = TileOffset + selectedTile.transform.localScale.y / 2;
+        position.y = TileOffset + (0.5f * selectedTile.transform.localScale.y);
 
         var tile = Instantiate(selectedTile, position, Quaternion.identity);
         tile.name = $"Tile {position.x} {position.z}";
         tile.transform.parent = transform;
         _tiles.Add(GetClosestCell(position), tile);
 
-        // If we're creating a slide tile, alternate the color of offset tiles to look like a checkerboard.
-        if (tile.TryGetComponent<SlideTile>(out var script)) {
+        // If it's a slide tile, vary the color of offset tiles to look like a checkerboard.
+        if (tile.TryGetComponent<SlideTile>(out var script))
+        {
             bool isOffset = ((position.x + position.z) % 2) == 1;
             script.InitializeColor(isOffset);
         }
@@ -157,7 +162,8 @@ public class GridManager : MonoBehaviour
     private void DestroyTile(Vector3 tilePosition)
     {
         Tile tile = GetTileAtPosition(GetClosestCell(tilePosition));
-        if (tile != null) {
+        if (tile != null)
+        {
             _tiles.Remove(GetClosestCell(tilePosition));
             Destroy(tile.gameObject);
         }
@@ -171,7 +177,8 @@ public class GridManager : MonoBehaviour
 
     public Tile GetTileAtPosition(Vector3Int position)
     {
-        if (_tiles.TryGetValue(position, out var tile)) {
+        if (_tiles.TryGetValue(position, out var tile))
+        {
             return tile;
         }
         return null;
@@ -179,8 +186,10 @@ public class GridManager : MonoBehaviour
 
     private void GenerateSlideTiles()
     {
-        for (int z = 0; z < BoardHeight; z++) {
-            for (int x = 0; x < BoardWidth; x++) {
+        for (int z = 0; z < BoardHeight; z++)
+        {
+            for (int x = 0; x < BoardWidth; x++)
+            {
                 Vector3 position = new(x, 0, z);
                 CreateTile(slidePrefab, position);
             }
@@ -189,20 +198,24 @@ public class GridManager : MonoBehaviour
 
     private void GenerateBoxes()
     {
-        for (int i = 0; i < BoxCountSelection; i++) {
+        for (int i = 0; i < BoxCountSelection; i++)
+        {
             int x = Random.Range(0, BoardWidth);
             int z = Random.Range(0, BoardHeight);
             Vector3Int newBoxPosition = new(x, 0, z);
 
             bool isNewLocation = true;
-            foreach (Transform box in Boxes) {
-                if (GetClosestCell(box.position) == newBoxPosition) {
+            foreach (Transform box in Boxes)
+            {
+                if (GetClosestCell(box.position) == newBoxPosition)
+                {
                     isNewLocation = false;
                     Debug.Log("Box location is taken, so instantiation was skipped.");
                     break;
                 }
             }
-            if (isNewLocation) {
+            if (isNewLocation)
+            {
                 Boxes.Add(Instantiate(boxPrefab, newBoxPosition, Quaternion.identity).transform);
                 _boxStartLocations.Add(newBoxPosition);
             }
@@ -251,7 +264,7 @@ public class GridManager : MonoBehaviour
         }
 
         foreach (Transform box in Boxes)
-        { 
+        {
             Tile nearestTile = GetTileAtPosition(GetClosestCell(box.position));
             box.parent = nearestTile.transform;
             nearestTile.BlocksMove = true;
@@ -265,45 +278,14 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    public void MoveUnit(Transform unit, Vector3Int target)
-    {
-        unit.position = target;
-    }
-
-    public void SetGameboard(Vector3Int player, List<Vector3Int> boxes)
-    {
-        Player.position = player;
-        for (int i = 0; i < boxes.Count; i++) {
-            Boxes[i].transform.position = boxes[i];
-        }
-        UpdateTiles();
-    }
-
-    public void RequestReset()
-    {
-        ResetGameboard();
-    }
-
-    private void ResetGameboard()
-    {
-        Player.position = _startLocation;
-        for (int i = 0; i < _boxStartLocations.Count; i++) {
-            Boxes[i].transform.position = _boxStartLocations[i];
-        }
-        UpdateTiles();
-    }
-
-    public void RequestNewGameboard()
-    {
-        GenerateGameboard();
-    }
-
     public void DestroyGameboard()
     {
-        for (int i = 0; i < transform.childCount; i++) {
+        for (int i = 0; i < transform.childCount; i++)
+        {
             Destroy(transform.GetChild(i).gameObject);
         }
-        foreach (Transform box in Boxes) {
+        foreach (Transform box in Boxes)
+        {
             Destroy(box.gameObject);
         }
         Destroy(Player.gameObject);
@@ -311,5 +293,30 @@ public class GridManager : MonoBehaviour
         _tiles.Clear();
         Boxes.Clear();
         _boxStartLocations.Clear();
+    }
+
+    public void MoveUnit(Transform unit, Vector3Int target)
+    {
+        unit.position = target;
+    }
+
+    public void ResetGameboard()
+    {
+        Player.position = _startLocation;
+        for (int i = 0; i < _boxStartLocations.Count; i++)
+        {
+            Boxes[i].transform.position = _boxStartLocations[i];
+        }
+        UpdateTiles();
+    }
+
+    public void SetGameboard(Vector3Int player, List<Vector3Int> boxes)
+    {
+        Player.position = player;
+        for (int i = 0; i < boxes.Count; i++)
+        {
+            Boxes[i].transform.position = boxes[i];
+        }
+        UpdateTiles();
     }
 }

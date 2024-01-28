@@ -12,10 +12,10 @@ public class CameraController : MonoBehaviour
         // Assign a reference to save letters.
         _background = GameObject.Find("Background").transform;
 
-        var position = OrientCameraAndBackground();
+        var position = OrientCamera();
         SetBackground(position);
     }
-    private Vector3 OrientCameraAndBackground()
+    private Vector3 OrientCamera()
     {
         var width = GridManager.Instance.BoardWidth;
         var height = GridManager.Instance.BoardHeight;
@@ -30,7 +30,7 @@ public class CameraController : MonoBehaviour
 
     private void SetBackground(Vector3 position)
     {
-        // Also set the background underneath the camera.
+        // Centre the background under the camera beneath the gameboard.
         Vector3 backgroundPosition = position;
         backgroundPosition.y = GridManager.Instance.TileOffset - 1;
         _background.position = backgroundPosition;
