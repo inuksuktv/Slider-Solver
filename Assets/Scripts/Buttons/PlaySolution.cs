@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Linq;
 
 public class PlaySolution : MonoBehaviour
 {
@@ -21,9 +22,11 @@ public class PlaySolution : MonoBehaviour
             Debug.Log("No solution found.");
         }
         else {
-            if (!CommandManager.Instance.UnitIsMoving) {
+            if (!CommandManager.Instance.UnitIsMoving)
+            {
                 GridManager.Instance.UpdateTiles();
-                StartCoroutine(DOSolution(_graphScript.Solution.Moves));
+                var moves = _graphScript.Solution.Moves.ToList<MoveCommand>();
+                StartCoroutine(DOSolution(moves));
             }
         }
     }

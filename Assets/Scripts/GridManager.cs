@@ -310,12 +310,12 @@ public class GridManager : MonoBehaviour
         UpdateTiles();
     }
 
-    public void SetGameboard(Vector3Int player, List<Vector3Int> boxes)
+    public void SetGameboard(Vertex.GameState state)
     {
-        Player.position = player;
-        for (int i = 0; i < boxes.Count; i++)
+        Player.position = state.PlayerLocation;
+        for (int i = 0; i < state.BoxLocations.Count; i++)
         {
-            Boxes[i].transform.position = boxes[i];
+            Boxes[i].transform.position = state.BoxLocations[i];
         }
         UpdateTiles();
     }

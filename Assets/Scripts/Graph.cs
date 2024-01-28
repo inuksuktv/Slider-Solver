@@ -37,33 +37,30 @@ public class Graph : MonoBehaviour
     {
         var dataStructures = StartCoroutine(InitializeDataStructures());
 
-        var (playerPosition, boxLocations) = InitializeSearch();
+        // Do what work we can while the data structures initialize.
+        var initialGameState = InitializeSearch();
 
-        // These need to finish before we can populate the starting vertex's data.
         yield return dataStructures;
 
-        Vertex currentGamestate = ReadInitialGamestate(playerPosition, boxLocations);
+        var initialVertex = InitialVertex(initialGameState);
 
         _verticesToSearch = new Queue<Vertex>();
-        _verticesToSearch.Enqueue(currentGamestate);
+        _verticesToSearch.Enqueue(initialVertex);
 
-        // Begin the search.
         while (_verticesToSearch.Count > 0)
         {
-            Vertex parent = _verticesToSearch.Dequeue();
+            var parent = _verticesToSearch.Dequeue();
             _visitedVertices.Add(parent);
 
-            // Populate the adjacency list for the current vertex by trying to move in each direction.
-            TryMoves(parent);
+            TryMovesAndPopulateAdjacency(parent);
 
-            foreach (Vertex child in _adjacencies[parent.Index])
+            foreach (var child in _adjacencies[parent.Index])
             {
                 // Return if a solution was found.
                 if (CheckForSolution(child))
                 {
                     FoundSolution = true;
                     Solution = child;
-                    _gridManager.SetGameboard(playerPosition, boxLocations);
                     yield break;
                 }
 
@@ -77,32 +74,12 @@ public class Graph : MonoBehaviour
             if (CheckMaxLoops()) { break; }
             
             // Yield after doing a chunk of work.
-            if ((_vertexIndex % 30) == 0) { yield return null; }
+            if ((_vertexIndex % 20) == 0) { yield return null; }
         }
         
-        _gridManager.SetGameboard(playerPosition, boxLocations);
+        _gridManager.SetGameboard(initialGameState);
         var noSolution = $"No solution found after searching {_vertexIndex} gamestates.";
         Debug.Log(noSolution);
-    }
-
-    private (Vector3Int playerPosition, List<Vector3Int> boxLocations) InitializeSearch()
-    {
-        // The player controller has the methods that process movement.
-        _playerController = _gridManager.Player.GetComponent<PlayerController>();
-
-        FoundSolution = false;
-        _vertexIndex = 0;
-        _goal = _gridManager.GetClosestCell(_gridManager.Goal.position);
-
-        Vector3Int playerInitial = _gridManager.GetClosestCell(_gridManager.Player.position);
-
-        List<Vector3Int> boxesInitial = new();
-        foreach (var box in _gridManager.Boxes)
-        {
-            boxesInitial.Add(_gridManager.GetClosestCell(box.position));
-        }
-
-        return (playerInitial, boxesInitial);
     }
 
     private IEnumerator InitializeDataStructures()
@@ -149,13 +126,34 @@ public class Graph : MonoBehaviour
         }
     }
 
-    private Vertex ReadInitialGamestate(Vector3Int playerPosition, List<Vector3Int> boxLocations)
+    private Vertex.GameState InitializeSearch()
     {
-        Vertex currentGamestate = _vertices.Pop();
-        currentGamestate.LateConstructor(playerPosition, boxLocations);
-        Origin = currentGamestate;
+        // The player controller has the methods that process movement.
+        _playerController = _gridManager.Player.GetComponent<PlayerController>();
 
-        return currentGamestate;
+        FoundSolution = false;
+        _vertexIndex = 0;
+        _goal = _gridManager.GetClosestCell(_gridManager.Goal.position);
+
+        Vector3Int playerInitial = _gridManager.GetClosestCell(_gridManager.Player.position);
+
+        List<Vector3Int> boxesInitial = new();
+        foreach (var box in _gridManager.Boxes)
+        {
+            boxesInitial.Add(_gridManager.GetClosestCell(box.position));
+        }
+        
+        Vertex.GameState state = new(playerInitial, boxesInitial);
+        return state;
+    }
+
+    private Vertex InitialVertex(Vertex.GameState state)
+    {
+        Vertex current = _vertices.Pop();
+        current.LateConstructor(state);
+        Origin = current;
+
+        return current;
     }
 
     private bool CheckForSolution(Vertex vertex)
@@ -166,7 +164,7 @@ public class Graph : MonoBehaviour
         // Log the solution.
         if (isSolved)
         {
-            _moveCount = vertex.Moves.Count;
+            _moveCount = vertex.Moves.Length;
             MoveCommand[] moveArray = new MoveCommand[_moveCount];
             vertex.Moves.CopyTo(moveArray, 0);
 
@@ -174,17 +172,17 @@ public class Graph : MonoBehaviour
             {
                 Debug.Log(move.To);
             }
-            var solutionFound = $"Found a {vertex.Moves.Count}-move solution after evaluating {vertex.Index} gamestates.";
+            var solutionFound = $"Found a {vertex.Moves.Length}-move solution after evaluating {vertex.Index} gamestates.";
             Debug.Log(solutionFound);
         }
         return isSolved;
     }
 
-    private void TryMoves(Vertex parent)
+    private void TryMovesAndPopulateAdjacency(Vertex parent)
     {
         foreach (var direction in _moves)
         {
-            _gridManager.SetGameboard(parent.PlayerLocation, parent.Boxes);
+            _gridManager.SetGameboard(parent.State);
             MoveCommand command = _playerController.MoveProcessing(direction);
 
             // Disregard this move if the command was invalid.
@@ -201,8 +199,9 @@ public class Graph : MonoBehaviour
 
             // Update the adjacency list with the new gamestate.
             Vertex childVertex = _vertices.Pop();
-            childVertex.LateConstructor(++_vertexIndex, parent, command);
-            _moveCount = childVertex.Moves.Count;
+            _vertexIndex++;
+            childVertex.LateConstructor(_vertexIndex, parent, command);
+            _moveCount = childVertex.Moves.Length;
 
             _adjacencies[parent.Index].Add(childVertex);
         }

@@ -18,8 +18,15 @@ public class CommandManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(this); }
-        else { Instance = this; }
+        // Singleton pattern.
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+        }
+        else
+        {
+            Instance = this;
+        }
     }
 
     public void AddCommand(ICommand command)
@@ -30,7 +37,8 @@ public class CommandManager : MonoBehaviour
 
     public void Undo()
     {
-        if (_commands.Count == 0) {
+        if (_commands.Count == 0)
+        {
             return;
         }
 

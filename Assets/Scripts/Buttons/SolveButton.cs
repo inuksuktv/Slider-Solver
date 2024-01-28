@@ -56,6 +56,8 @@ public class SolveButton : MonoBehaviour
                 button.color = Color.red;
             }
         }
+        var initialGameState = _graphScript.Origin.State;
+        GridManager.Instance.SetGameboard(initialGameState);
         GridManager.Instance.SearchIsRunning = false;
     }
 }

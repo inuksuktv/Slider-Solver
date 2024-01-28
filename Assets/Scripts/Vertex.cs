@@ -6,57 +6,63 @@ using UnityEngine;
 
 public class Vertex: IEquatable<Vertex>
 {
-    public int Index { get; private set; }
-    public List<MoveCommand> Moves { get; private set; } = new();
-    public List<Vector3Int> Boxes { get; private set; } = new();
-    public Vector3Int PlayerLocation { get; private set; } = new();
+    public int Index { get; private set; } = 0;
+    public MoveCommand[] Moves { get; private set; }
     public Vertex Parent { get; private set; }
+    public GameState State;
+
+    public struct GameState
+    {
+        public Vector3Int PlayerLocation { get; private set; }
+        public List<Vector3Int> BoxLocations { get; private set; }
+
+        public GameState(Vector3Int playerLocation, List<Vector3Int> boxLocations)
+        {
+            PlayerLocation = playerLocation;
+
+            BoxLocations = boxLocations.OrderBy(v => v.x).ToList();
+        }
+    }
 
     // Used for the starting vertex.
-    public void LateConstructor(Vector3Int playerPos, List<Vector3Int> boxes)
+    public void LateConstructor(GameState state)
     {
-        Index = 0;
-        PlayerLocation = playerPos;
+        State = state;
 
-        Boxes.Clear();
-        foreach (Vector3Int box in boxes) {
-            Boxes.Add(box);
-        }
-        Boxes = Boxes.OrderBy(v => v.x).ToList();
+        Moves = new MoveCommand[0];
 
         Parent = null;
-        Moves = new();
     }
 
     // Used for every other vertex.
     public void LateConstructor(int index, Vertex parent, MoveCommand command)
     {
         Index = index;
-        PlayerLocation = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
+        var playerLocation = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
 
-        Boxes.Clear();
-        foreach (Transform box in GridManager.Instance.Boxes) {
-            Boxes.Add(GridManager.Instance.GetClosestCell(box.position));
+        var boxes = GridManager.Instance.Boxes;
+        List<Vector3Int> boxLocations = new();
+        foreach (Transform box in boxes)
+        {
+            boxLocations.Add(GridManager.Instance.GetClosestCell(box.position));
         }
-        Boxes = Boxes.OrderBy(v => v.x).ToList();
+
+        State = new GameState(playerLocation, boxLocations);
 
         Parent = parent;
-        Moves = new();
-        MoveCommand[] moves = new MoveCommand[parent.Moves.Count];
-        parent.Moves.CopyTo(moves, 0);
-        foreach (var move in moves) {
-            Moves.Add(move);
-        }
-        Moves.Add(command);
+
+        Moves = new MoveCommand[parent.Moves.Length + 1];
+        parent.Moves.CopyTo(Moves, 0);
+        Moves[^1] = command;
     }
 
     public bool Equals(Vertex other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return (PlayerLocation.Equals(other.PlayerLocation) &&
-            (Boxes.Count == other.Boxes.Count) &&
-            Boxes.TrueForAll(other.Boxes.Contains));
+        return (State.PlayerLocation.Equals(other.State.PlayerLocation) &&
+            (State.BoxLocations.Count == other.State.BoxLocations.Count) &&
+            State.BoxLocations.TrueForAll(other.State.BoxLocations.Contains));
     }
 
     public override bool Equals(object obj)
@@ -68,12 +74,16 @@ public class Vertex: IEquatable<Vertex>
 
     public override int GetHashCode()
     {
-        unchecked {
+        unchecked
+        {
             int hash = 17;
-            hash = hash * 23 + PlayerLocation.GetHashCode();
-            foreach (var box in Boxes) {
-                hash = hash * 23 + box.GetHashCode();
+
+            hash = (23 * hash) + State.PlayerLocation.GetHashCode();
+            foreach (var box in State.BoxLocations)
+            {
+                hash = (23 * hash) + box.GetHashCode();
             }
+
             return hash;
         }
     }
