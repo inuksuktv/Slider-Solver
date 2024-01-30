@@ -35,7 +35,7 @@ public class Vertex: IEquatable<Vertex>
     }
 
     // Used for every other vertex.
-    public void LateConstructor(int index, Vertex parent, MoveCommand command)
+    public void LateConstructor(int index, Vertex parent, MoveCommand move)
     {
         Index = index;
         var playerLocation = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
@@ -53,7 +53,31 @@ public class Vertex: IEquatable<Vertex>
 
         Moves = new MoveCommand[parent.Moves.Length + 1];
         parent.Moves.CopyTo(Moves, 0);
-        Moves[^1] = command;
+        Moves[^1] = move;
+    }
+
+    public void SimulatorConstructor(GridSimulator gameBoard, int index, Vertex parent, MoveCommand simulatedMove)
+    {
+        Index = index;
+
+        var player = gameBoard.Player;
+        Vector3Int playerLocation = new(player.X - 2, 0, player.Y - 2);
+
+        List<Vector3Int> boxLocations = new();
+        foreach (var box in gameBoard.Boxes)
+        {
+            boxLocations.Add(new Vector3Int(box.X - 2, 0, box.Y - 2));
+        }
+
+        State = new GameState(playerLocation, boxLocations);
+
+        Parent = parent;
+
+        simulatedMove.ConvertSimulatedCoordinatesToGameSpace();
+
+        Moves = new MoveCommand[parent.Moves.Length + 1];
+        parent.Moves.CopyTo(Moves, 0);
+        Moves[^1] = simulatedMove;
     }
 
     public bool Equals(Vertex other)

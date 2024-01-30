@@ -8,6 +8,8 @@ public class PlayerController : MonoBehaviour
     private PlayerInput _playerInput;
     private InputAction _upAction, _downAction, _leftAction, _rightAction, _backAction, _pauseAction;
 
+    private GridManager _gridManager;
+    private CommandManager _commandManager;
     private Vector3Int _originCell, _targetCell;
     private bool _inputIsBlocked = false;
 
@@ -56,10 +58,17 @@ public class PlayerController : MonoBehaviour
         _pauseAction.Disable();
     }
 
+    private void Start()
+    {
+        // Local cache to reduce verbosity. Both objects are singletons.
+        _gridManager = GridManager.Instance;
+        _commandManager = CommandManager.Instance;
+    }
+
     private void Update()
     {
-        if (CommandManager.Instance != null && GridManager.Instance != null) {
-            if (CommandManager.Instance.UnitIsMoving || GridManager.Instance.SearchIsRunning) {
+        if (_commandManager != null && _gridManager != null) {
+            if (_commandManager.UnitIsMoving || _gridManager.SearchIsRunning) {
                 _inputIsBlocked = true;
             }
             else {
@@ -73,7 +82,7 @@ public class PlayerController : MonoBehaviour
         if (!_inputIsBlocked) {
             var command = MoveProcessing(Vector3Int.forward);
             if (command != null) {
-                CommandManager.Instance.AddCommand(command);
+                _commandManager.AddCommand(command);
             }
         }
     }
@@ -83,7 +92,7 @@ public class PlayerController : MonoBehaviour
         if (!_inputIsBlocked) {
             var command = MoveProcessing(Vector3Int.back);
             if (command != null) {
-                CommandManager.Instance.AddCommand(command);
+                _commandManager.AddCommand(command);
             }
         }
     }
@@ -93,7 +102,7 @@ public class PlayerController : MonoBehaviour
         if (!_inputIsBlocked) {
             var command = MoveProcessing(Vector3Int.left);
             if (command != null) {
-                CommandManager.Instance.AddCommand(command);
+                _commandManager.AddCommand(command);
             }
         }
     }
@@ -103,7 +112,7 @@ public class PlayerController : MonoBehaviour
         if (!_inputIsBlocked) {
             var command = MoveProcessing(Vector3Int.right);
             if (command != null) {
-                CommandManager.Instance.AddCommand(command);
+                _commandManager.AddCommand(command);
             }
         }
     }
@@ -111,7 +120,7 @@ public class PlayerController : MonoBehaviour
     private void Back(InputAction.CallbackContext context)
     {
         if (!_inputIsBlocked) {
-            CommandManager.Instance.Undo();
+            _commandManager.Undo();
         }
     }
 
@@ -128,7 +137,7 @@ public class PlayerController : MonoBehaviour
         SetOriginAndTargetCells(direction);
 
         // Return null if the move is illegal.
-        Tile testTile = GridManager.Instance.GetTileAtPosition(_targetCell);
+        Tile testTile = _gridManager.GetTileAtPosition(_targetCell);
         if (testTile == null || testTile.BlocksMove)
         {
             return null;
@@ -136,36 +145,36 @@ public class PlayerController : MonoBehaviour
 
         FindDestination(direction);
 
-        MoveCommand command = new(_originCell, _targetCell);
-        return command;
+        MoveCommand move = new(_originCell, _targetCell);
+
+        return move;
     }
 
     private void SetOriginAndTargetCells(Vector3Int direction)
     {
         // The player is the active unit by default. If the player pushed a box, the box is the active unit instead.
-        _originCell = GridManager.Instance.GetClosestCell(transform.position);
-        _targetCell = GridManager.Instance.GetClosestCell(transform.position + direction);
+        _originCell = _gridManager.GetClosestCell(transform.position);
+        _targetCell = _gridManager.GetClosestCell(transform.position + direction);
 
         // If the player is pushing a box, adjust so the box is the active unit.
-        Transform targetTile = GridManager.Instance.GetTileAtPosition(_targetCell).transform;
+        Transform targetTile = _gridManager.GetTileAtPosition(_targetCell).transform;
         if ((targetTile.childCount > 0) && targetTile.GetChild(0).CompareTag("Box"))
         {
             _originCell = _targetCell;
-            _targetCell = GridManager.Instance.GetClosestCell(targetTile.position + direction);
+            _targetCell = _gridManager.GetClosestCell(targetTile.position + direction);
         }
     }
 
     private void FindDestination(Vector3Int direction)
     {
         // Search in the direction of the move until a tile that blocks movement is found.
-        int maxMove = Mathf.Max(GridManager.Instance.BoardWidth + 1, GridManager.Instance.BoardHeight + 1);
-        for (int i = 1; i <= maxMove; i++)
+        int maxMove = Mathf.Max(_gridManager.BoardWidth + 1, _gridManager.BoardHeight + 1);
+        for (var i = 1; i <= maxMove; i++)
         {
-            Tile nextTile = GridManager.Instance.GetTileAtPosition(_originCell + direction * i);
-
+            Tile nextTile = _gridManager.GetTileAtPosition(_originCell + direction * i);
             if (nextTile.BlocksMove)
             {
-                _targetCell = GridManager.Instance.GetClosestCell(nextTile.transform.position - direction);
+                _targetCell = _gridManager.GetClosestCell(nextTile.transform.position - direction);
                 break;
             }
         }

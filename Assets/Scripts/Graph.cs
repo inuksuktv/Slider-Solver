@@ -22,14 +22,18 @@ public class Graph : MonoBehaviour
     private int _moveCount;
 
     private GridManager _gridManager;
-    private PlayerController _playerController;
+    private GridSimulator _gridSimulator;
+    //private PlayerController _playerController;
+    GridSimulator.Coordinates[] _moves = { GridSimulator.Coordinates.up, GridSimulator.Coordinates.down,
+                                            GridSimulator.Coordinates.right, GridSimulator.Coordinates.left};
+
 
     private Vector3Int _goal;
-    private readonly Vector3Int[] _moves = { Vector3Int.forward, Vector3Int.back, Vector3Int.left, Vector3Int.right };
+    //private readonly Vector3Int[] _moves = { Vector3Int.forward, Vector3Int.back, Vector3Int.left, Vector3Int.right };
 
     private void Start()
     {
-        // Use a local reference to reduce verbosity. GridManager is a singleton.
+        // Cache a local reference to reduce verbosity. GridManager is a singleton.
         _gridManager = GridManager.Instance;
     }
 
@@ -42,7 +46,11 @@ public class Graph : MonoBehaviour
 
         yield return dataStructures;
 
-        var initialVertex = InitialVertex(initialGameState);
+        var initialVertex = ReadOrigin(initialGameState);
+
+        // Simulator things.
+        _gridSimulator = new GridSimulator(initialVertex, _goal);
+        _gridSimulator.GenerateGameboard();
 
         _verticesToSearch = new Queue<Vertex>();
         _verticesToSearch.Enqueue(initialVertex);
@@ -52,7 +60,7 @@ public class Graph : MonoBehaviour
             var parent = _verticesToSearch.Dequeue();
             _visitedVertices.Add(parent);
 
-            TryMovesAndPopulateAdjacency(parent);
+            TryMovesWithSimulator(parent);
 
             foreach (var child in _adjacencies[parent.Index])
             {
@@ -74,7 +82,7 @@ public class Graph : MonoBehaviour
             if (CheckMaxLoops()) { break; }
             
             // Yield after doing a chunk of work.
-            if ((_vertexIndex % 20) == 0) { yield return null; }
+            if ((_vertexIndex % 150) == 0) { yield return null; }
         }
         
         _gridManager.SetGameboard(initialGameState);
@@ -129,7 +137,7 @@ public class Graph : MonoBehaviour
     private Vertex.GameState InitializeSearch()
     {
         // The player controller has the methods that process movement.
-        _playerController = _gridManager.Player.GetComponent<PlayerController>();
+        //_playerController = _gridManager.Player.GetComponent<PlayerController>();
 
         FoundSolution = false;
         _vertexIndex = 0;
@@ -147,7 +155,7 @@ public class Graph : MonoBehaviour
         return state;
     }
 
-    private Vertex InitialVertex(Vertex.GameState state)
+    private Vertex ReadOrigin(Vertex.GameState state)
     {
         Vertex current = _vertices.Pop();
         current.LateConstructor(state);
@@ -158,8 +166,8 @@ public class Graph : MonoBehaviour
 
     private bool CheckForSolution(Vertex vertex)
     {
-        MoveCommand command = vertex.Moves.Last();
-        bool isSolved = command.Unit.CompareTag("Player") && (command.To == _goal);
+        Vector3Int player = vertex.State.PlayerLocation;
+        bool isSolved = player == _goal;
 
         // Log the solution.
         if (isSolved)
@@ -178,34 +186,59 @@ public class Graph : MonoBehaviour
         return isSolved;
     }
 
-    private void TryMovesAndPopulateAdjacency(Vertex parent)
+    private void TryMovesWithSimulator(Vertex parent)
     {
         foreach (var direction in _moves)
         {
-            _gridManager.SetGameboard(parent.State);
-            MoveCommand command = _playerController.MoveProcessing(direction);
+            _gridSimulator.SetGameBoard(parent.State);
+            MoveCommand move = _gridSimulator.MoveProcessing(direction);
 
-            // Disregard this move if the command was invalid.
-            if (command == null) { continue; }
+            if (move == null) { continue; }
 
-            Tile fromTile = _gridManager.GetTileAtPosition(command.From);
-            Transform activeUnit = fromTile.transform.GetChild(0);
-
-            // Pushing a box into the goal makes the puzzle unsolvable, so disregard this move.
-            bool goalIsBlocked = activeUnit.CompareTag("Box") && (command.To == _goal);
+            var activeCell = _gridSimulator.GameBoard[move.Origin.X, move.Origin.Y];
+            var goalIsBlocked = activeCell == GridSimulator.Cell.Box && move.Target == _gridSimulator.Goal;
             if (goalIsBlocked) { continue; }
 
-            _gridManager.MoveUnit(activeUnit, command.To);
+            _gridSimulator.MoveUnit(move);
 
             // Update the adjacency list with the new gamestate.
-            Vertex childVertex = _vertices.Pop();
+            var child = _vertices.Pop();
             _vertexIndex++;
-            childVertex.LateConstructor(_vertexIndex, parent, command);
-            _moveCount = childVertex.Moves.Length;
+            child.SimulatorConstructor(_gridSimulator, _vertexIndex, parent, move);
+            _moveCount = child.Moves.Length;
 
-            _adjacencies[parent.Index].Add(childVertex);
+            _adjacencies[parent.Index].Add(child);
         }
     }
+
+    //private void TryMovesAndPopulateAdjacency(Vertex parent)
+    //{
+    //    foreach (var direction in _moves)
+    //    {
+    //        _gridManager.SetGameboard(parent.State);
+    //        MoveCommand move = _playerController.MoveProcessing(direction);
+
+    //        // Disregard this move if the command was invalid.
+    //        if (move == null) { continue; }
+
+    //        Tile fromTile = _gridManager.GetTileAtPosition(move.From);
+    //        Transform activeUnit = fromTile.transform.GetChild(0);
+
+    //        // Pushing a box into the goal makes the puzzle unsolvable, so disregard this move.
+    //        bool goalIsBlocked = activeUnit.CompareTag("Box") && (move.To == _goal);
+    //        if (goalIsBlocked) { continue; }
+
+    //        _gridManager.MoveUnit(activeUnit, move.To);
+
+    //        // Update the adjacency list with the new gamestate.
+    //        Vertex childVertex = _vertices.Pop();
+    //        _vertexIndex++;
+    //        childVertex.LateConstructor(_vertexIndex, parent, move);
+    //        _moveCount = childVertex.Moves.Length;
+
+    //        _adjacencies[parent.Index].Add(childVertex);
+    //    }
+    //}
 
     private bool CheckMaxLoops()
     {

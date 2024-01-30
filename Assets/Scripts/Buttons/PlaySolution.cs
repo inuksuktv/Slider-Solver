@@ -33,25 +33,16 @@ public class PlaySolution : MonoBehaviour
 
     private IEnumerator DOSolution(List<MoveCommand> moves)
     {
-        List<Transform> boxes = GridManager.Instance.Boxes;
         CommandManager.Instance.UnitIsMoving = true;
-        foreach (MoveCommand move in moves) {
-            Transform unit = move.Unit;
-            // Detect if we're moving the player or a box.
-            if (move.Unit.CompareTag("Player")) {
-                unit = GridManager.Instance.Player;
-            }
-            else if (move.Unit.CompareTag("Box")) {
-                foreach (Transform box in boxes) {
-                    Vector3Int boxPos = GridManager.Instance.GetClosestCell(box.position);
-                    if (boxPos == move.From) {
-                        unit = box;
-                        break;
-                    }
-                }
-            }
+
+        foreach (MoveCommand move in moves)
+        {
+            Transform unit = GridManager.Instance.GetTileAtPosition(move.From).transform.GetChild(0);
+            
             Tween tween = unit.DOMove(move.To, 1).SetEase(Ease.InOutSine);
             yield return tween.WaitForCompletion();
+
+            GridManager.Instance.UpdateTiles();
         }
         CommandManager.Instance.UnitIsMoving = false;
     }

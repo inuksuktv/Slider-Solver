@@ -1993,7 +1993,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7de565a4ac88d0f41a0ab766546ee737, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxVertices: 100000
+  _maxVertices: 500000
   FoundSolution: 0
 --- !u!1 &1653844046
 GameObject:
