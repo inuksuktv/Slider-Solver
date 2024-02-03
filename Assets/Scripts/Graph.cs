@@ -20,6 +20,7 @@ public class Graph : MonoBehaviour
 
     private int _vertexIndex;
     private int _moveCount;
+    private int _loopsPerFrame = 100;
 
     private GridManager _gridManager;
     private GridSimulator _gridSimulator;
@@ -48,7 +49,6 @@ public class Graph : MonoBehaviour
 
         var initialVertex = ReadOrigin(initialGameState);
 
-        // Simulator things.
         _gridSimulator = new GridSimulator(initialVertex, _goal);
         _gridSimulator.GenerateGameboard();
 
@@ -82,7 +82,7 @@ public class Graph : MonoBehaviour
             if (CheckMaxLoops()) { break; }
             
             // Yield after doing a chunk of work.
-            if ((_vertexIndex % 150) == 0) { yield return null; }
+            if ((_vertexIndex % _loopsPerFrame) == 0) { yield return null; }
         }
         
         _gridManager.SetGameboard(initialGameState);
@@ -92,16 +92,24 @@ public class Graph : MonoBehaviour
 
     private IEnumerator InitializeDataStructures()
     {
-        Coroutine[] init = new Coroutine[3];
-        init[0] = StartCoroutine(InitializeAdjacencyList());
-        init[1] = StartCoroutine(InitializeVertexStack());
-        init[2] = StartCoroutine(InitializeVisitedHashset());
+        Coroutine[] initialize = new Coroutine[3];
+        initialize[0] = StartCoroutine(InitializeAdjacencyList());
+        initialize[1] = StartCoroutine(InitializeVertexStack());
+        initialize[2] = StartCoroutine(InitializeVisitedHashset());
 
-        foreach (Coroutine dataStructure in init) {
+        foreach (var dataStructure in initialize)
+        {
             yield return dataStructure;
         }
 
-        yield return StartCoroutine(PopulateAdjacencyListsAndGenerateVertices());
+        initialize = new Coroutine[2];
+        initialize[0] = StartCoroutine(PopulateAdjacencyList());
+        initialize[1] = StartCoroutine(PopulateVertices());
+        
+        foreach (var dataStructure in initialize)
+        {
+            yield return dataStructure;
+        }
     }
 
     private IEnumerator InitializeAdjacencyList()
@@ -122,23 +130,40 @@ public class Graph : MonoBehaviour
         _visitedVertices = new HashSet<Vertex>(_maxVertices);
     }
 
-    private IEnumerator PopulateAdjacencyListsAndGenerateVertices()
+    private IEnumerator PopulateAdjacencyList()
     {
         yield return null;
-        for (int i = 0; i < _maxVertices; i++) {
+
+        for (int i = 0; i < _maxVertices; i++)
+        {
             List<Vertex> list = new(4);
             _adjacencies.Add(list);
 
+            if (i % (_loopsPerFrame * 100) == 0)
+            {
+                yield return null;
+            }
+        }
+    }
+
+    private IEnumerator PopulateVertices()
+    {
+        yield return null;
+
+        for (int i = 0; i < _maxVertices; i++)
+        {
             Vertex v = new();
             _vertices.Push(v);
+
+            if (i % (_loopsPerFrame * 100) == 0)
+            {
+                yield return null;
+            }
         }
     }
 
     private Vertex.GameState InitializeSearch()
     {
-        // The player controller has the methods that process movement.
-        //_playerController = _gridManager.Player.GetComponent<PlayerController>();
-
         FoundSolution = false;
         _vertexIndex = 0;
         _goal = _gridManager.GetClosestCell(_gridManager.Goal.position);
@@ -210,35 +235,6 @@ public class Graph : MonoBehaviour
             _adjacencies[parent.Index].Add(child);
         }
     }
-
-    //private void TryMovesAndPopulateAdjacency(Vertex parent)
-    //{
-    //    foreach (var direction in _moves)
-    //    {
-    //        _gridManager.SetGameboard(parent.State);
-    //        MoveCommand move = _playerController.MoveProcessing(direction);
-
-    //        // Disregard this move if the command was invalid.
-    //        if (move == null) { continue; }
-
-    //        Tile fromTile = _gridManager.GetTileAtPosition(move.From);
-    //        Transform activeUnit = fromTile.transform.GetChild(0);
-
-    //        // Pushing a box into the goal makes the puzzle unsolvable, so disregard this move.
-    //        bool goalIsBlocked = activeUnit.CompareTag("Box") && (move.To == _goal);
-    //        if (goalIsBlocked) { continue; }
-
-    //        _gridManager.MoveUnit(activeUnit, move.To);
-
-    //        // Update the adjacency list with the new gamestate.
-    //        Vertex childVertex = _vertices.Pop();
-    //        _vertexIndex++;
-    //        childVertex.LateConstructor(_vertexIndex, parent, move);
-    //        _moveCount = childVertex.Moves.Length;
-
-    //        _adjacencies[parent.Index].Add(childVertex);
-    //    }
-    //}
 
     private bool CheckMaxLoops()
     {
