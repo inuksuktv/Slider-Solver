@@ -3,202 +3,247 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements;
 
-// This class represents a directed graph using an adjacency list.
 public class Graph : MonoBehaviour
 {
     [SerializeField] private int _maxVertices;
+
     public Vertex Origin { get; private set; }
     public Vertex Solution { get; private set; }
     public bool FoundSolution = false;
 
-    private List<List<Vertex>> _adjacency;
-    private HashSet<Vertex> _visited;
+    private List<List<Vertex>> _adjacencies;
+    private HashSet<Vertex> _visitedVertices;
     private Stack<Vertex> _vertices;
+    private Queue<Vertex> _verticesToSearch;
+
     private int _vertexIndex;
     private int _moveCount;
-    private PlayerController _playerController;
+    private int _loopsPerFrame = 100;
 
-    private Vector3Int _currentPlayer;
+    private GridManager _gridManager;
+    private GridSimulator _gridSimulator;
+    //private PlayerController _playerController;
+    GridSimulator.Coordinates[] _moves = { GridSimulator.Coordinates.up, GridSimulator.Coordinates.down,
+                                            GridSimulator.Coordinates.right, GridSimulator.Coordinates.left};
+
+
     private Vector3Int _goal;
-    private List<Vector3Int> _boxLocations;
-    private Vector3Int _direction;
+    //private readonly Vector3Int[] _moves = { Vector3Int.forward, Vector3Int.back, Vector3Int.left, Vector3Int.right };
 
-    public IEnumerator BreadthFirstSearch(Vector3Int position, List<Transform> boxList)
+    private void Start()
     {
-        _playerController = GridManager.Instance.Player.GetComponent<PlayerController>();
+        // Cache a local reference to reduce verbosity. GridManager is a singleton.
+        _gridManager = GridManager.Instance;
+    }
 
-        // Store the initial game state.
-        Vector3Int playerInitial = position;
-        _goal = GridManager.Instance.GetClosestCell(GridManager.Instance.Goal.position);
-        List<Vector3Int> boxesInitial = new();
-        foreach (Transform box in boxList) {
-            boxesInitial.Add(GridManager.Instance.GetClosestCell(box.position));
-        }
+    public IEnumerator BreadthFirstSearch()
+    {
+        var dataStructures = StartCoroutine(InitializeDataStructures());
 
-        // Initialize data structures for the search.
-        yield return StartCoroutine(InitializeDataStructuresWithCoroutines());
+        // Do what work we can while the data structures initialize.
+        var initialGameState = InitializeSearch();
 
-        // Write the starting vertex's data, visit it, and queue it for search.
-        Vertex start = _vertices.Pop();
-        _vertexIndex = 0;
-        start.LateConstructor(playerInitial, boxesInitial);
-        Origin = start;
-        _visited.Add(start);
+        yield return dataStructures;
 
-        Queue<Vertex> search = new();
-        search.Enqueue(start);
+        var initialVertex = ReadOrigin(initialGameState);
 
-        // Begin the search.
-        while (search.Count > 0) {
-            // Dequeue the next vertex and read its game state.
-            Vertex parent = search.Dequeue();
-            _currentPlayer = parent.PlayerLocation;
-            _boxLocations = parent.Boxes;
+        _gridSimulator = new GridSimulator(initialVertex, _goal);
+        _gridSimulator.GenerateGameboard();
 
-            // Populate the adjacency list for the current vertex by trying to move in each direction.
-            TryMoves(parent);
+        _verticesToSearch = new Queue<Vertex>();
+        _verticesToSearch.Enqueue(initialVertex);
 
-            foreach (Vertex child in _adjacency[parent.Index]) {
-                // Return if the player arrived at the goal.
-                if (CheckForSolution(child)) {
+        while (_verticesToSearch.Count > 0)
+        {
+            var parent = _verticesToSearch.Dequeue();
+            _visitedVertices.Add(parent);
+
+            TryMovesWithSimulator(parent);
+
+            foreach (var child in _adjacencies[parent.Index])
+            {
+                // Return if a solution was found.
+                if (CheckForSolution(child))
+                {
                     FoundSolution = true;
                     Solution = child;
-                    GridManager.Instance.SetGameboard(playerInitial, boxesInitial);
                     yield break;
                 }
-                // Check if the vertex is in the hashset to see if the game state has been visited previously.
-                if (!_visited.Contains(child)) {
-                    _visited.Add(child);
-                    search.Enqueue(child);
+
+                // Queue the new gamestate for search if it hasn't been encountered before.
+                if (!_visitedVertices.Contains(child))
+                {
+                    _verticesToSearch.Enqueue(child);
                 }
             }
-            // If we hit the set maximum search, break out of the search.
-            if (_vertexIndex > _maxVertices - 5) {
-                Debug.Log("No solution exists less than " + _moveCount + " moves.");
-                break;
-            }
-            // Yield to the main thread after doing a chunk of work.
-            if (_vertexIndex % 100 == 0) { yield return null; }
+
+            if (CheckMaxLoops()) { break; }
+            
+            // Yield after doing a chunk of work.
+            if ((_vertexIndex % _loopsPerFrame) == 0) { yield return null; }
         }
-        GridManager.Instance.SetGameboard(playerInitial, boxesInitial);
-        Debug.Log("Returned with no solution after searching " + _vertexIndex + " game states.");
+        
+        _gridManager.SetGameboard(initialGameState);
+        var noSolution = $"No solution found after searching {_vertexIndex} gamestates.";
+        Debug.Log(noSolution);
     }
 
-    private IEnumerator InitializeDataStructuresWithCoroutines()
+    private IEnumerator InitializeDataStructures()
     {
-        Coroutine[] init = new Coroutine[3];
-        init[0] = StartCoroutine(AdjacencyList());
-        init[1] = StartCoroutine(Vertices());
-        init[2] = StartCoroutine(Visited());
+        Coroutine[] initialize = new Coroutine[3];
+        initialize[0] = StartCoroutine(InitializeAdjacencyList());
+        initialize[1] = StartCoroutine(InitializeVertexStack());
+        initialize[2] = StartCoroutine(InitializeVisitedHashset());
 
-        // Wait for those data structures to finish initializing.
-        foreach (Coroutine dataStructure in init) {
+        foreach (var dataStructure in initialize)
+        {
             yield return dataStructure;
         }
-        // Then loop through the adjacency list and stack of vertices to initialize them.
-        yield return StartCoroutine(StackAndLists());
+
+        initialize = new Coroutine[2];
+        initialize[0] = StartCoroutine(PopulateAdjacencyList());
+        initialize[1] = StartCoroutine(PopulateVertices());
+        
+        foreach (var dataStructure in initialize)
+        {
+            yield return dataStructure;
+        }
     }
 
-    private IEnumerator AdjacencyList()
+    private IEnumerator InitializeAdjacencyList()
     {
-
         yield return null;
-        _adjacency = new List<List<Vertex>>(_maxVertices);
+        _adjacencies = new List<List<Vertex>>(_maxVertices);
     }
 
-    private IEnumerator Vertices()
+    private IEnumerator InitializeVertexStack()
     {
         yield return null;
         _vertices = new(_maxVertices);
     }
 
-    private IEnumerator Visited()
+    private IEnumerator InitializeVisitedHashset()
     {
         yield return null;
-        _visited = new HashSet<Vertex>(_maxVertices);
+        _visitedVertices = new HashSet<Vertex>(_maxVertices);
     }
 
-    private IEnumerator StackAndLists()
+    private IEnumerator PopulateAdjacencyList()
     {
         yield return null;
-        for (int i = 0; i < _maxVertices; i++) {
-            List<Vertex> list = new(4);
-            _adjacency.Add(list);
 
-            Vertex v = new();
-            _vertices.Push(v);
+        for (int i = 0; i < _maxVertices; i++)
+        {
+            List<Vertex> list = new(4);
+            _adjacencies.Add(list);
+
+            if (i % (_loopsPerFrame * 100) == 0)
+            {
+                yield return null;
+            }
         }
     }
 
+    private IEnumerator PopulateVertices()
+    {
+        yield return null;
+
+        for (int i = 0; i < _maxVertices; i++)
+        {
+            Vertex v = new();
+            _vertices.Push(v);
+
+            if (i % (_loopsPerFrame * 100) == 0)
+            {
+                yield return null;
+            }
+        }
+    }
+
+    private Vertex.GameState InitializeSearch()
+    {
+        FoundSolution = false;
+        _vertexIndex = 0;
+        _goal = _gridManager.GetClosestCell(_gridManager.Goal.position);
+
+        Vector3Int playerInitial = _gridManager.GetClosestCell(_gridManager.Player.position);
+
+        List<Vector3Int> boxesInitial = new();
+        foreach (var box in _gridManager.Boxes)
+        {
+            boxesInitial.Add(_gridManager.GetClosestCell(box.position));
+        }
+        
+        Vertex.GameState state = new(playerInitial, boxesInitial);
+        return state;
+    }
+
+    private Vertex ReadOrigin(Vertex.GameState state)
+    {
+        Vertex current = _vertices.Pop();
+        current.LateConstructor(state);
+        Origin = current;
+
+        return current;
+    }
 
     private bool CheckForSolution(Vertex vertex)
     {
-        MoveCommand command = vertex.Moves.Last();
-        bool isSolved = command.Unit.CompareTag("Player") && command.To == _goal;
-        if (isSolved) {
-            // Log the solution.
-            _moveCount = vertex.Moves.Count;
+        Vector3Int player = vertex.State.PlayerLocation;
+        bool isSolved = player == _goal;
+
+        // Log the solution.
+        if (isSolved)
+        {
+            _moveCount = vertex.Moves.Length;
             MoveCommand[] moveArray = new MoveCommand[_moveCount];
             vertex.Moves.CopyTo(moveArray, 0);
-            foreach (MoveCommand move in moveArray) {
+
+            foreach (MoveCommand move in moveArray)
+            {
                 Debug.Log(move.To);
             }
-            Debug.Log("Found a " + vertex.Moves.Count + "-move solution after evaluating " + vertex.Index + " game states.");
+            var solutionFound = $"Found a {vertex.Moves.Length}-move solution after evaluating {vertex.Index} gamestates.";
+            Debug.Log(solutionFound);
         }
         return isSolved;
     }
 
-
-    private void PlaceGamePieces(Vector3Int playerFromVertex, List<Vector3Int> boxLocations)
+    private void TryMovesWithSimulator(Vertex parent)
     {
-        GridManager.Instance.Player.position = playerFromVertex;
-        for (int i = 0; i < boxLocations.Count; i++) {
-            GridManager.Instance.Boxes[i].position = boxLocations[i];
+        foreach (var direction in _moves)
+        {
+            _gridSimulator.SetGameBoard(parent.State);
+            MoveCommand move = _gridSimulator.MoveProcessing(direction);
+
+            if (move == null) { continue; }
+
+            var activeCell = _gridSimulator.GameBoard[move.Origin.X, move.Origin.Y];
+            var goalIsBlocked = activeCell == GridSimulator.Cell.Box && move.Target == _gridSimulator.Goal;
+            if (goalIsBlocked) { continue; }
+
+            _gridSimulator.MoveUnit(move);
+
+            // Update the adjacency list with the new gamestate.
+            var child = _vertices.Pop();
+            _vertexIndex++;
+            child.SimulatorConstructor(_gridSimulator, _vertexIndex, parent, move);
+            _moveCount = child.Moves.Length;
+
+            _adjacencies[parent.Index].Add(child);
         }
-        GridManager.Instance.UpdateTiles();
     }
 
-    private void TryMoves(Vertex parent)
+    private bool CheckMaxLoops()
     {
-        for (int moveIndex = 0; moveIndex < 4; moveIndex++) {
-            GridManager.Instance.SetGameboard(_currentPlayer, _boxLocations);
-
-            switch (moveIndex) {
-                case 0:
-                    _direction = Vector3Int.forward;
-                    break;
-                case 1:
-                    _direction = Vector3Int.back;
-                    break;
-                case 2:
-                    _direction = Vector3Int.left;
-                    break;
-                case 3:
-                    _direction = Vector3Int.right;
-                    break;
-            }
-
-            MoveCommand command = _playerController.MoveProcessing(_direction);
-
-            // Illegal moves return null. Only legal moves get processed.
-            if (command != null) {
-                // Pushing a box onto the goal tile means there's no solution, so don't consider that move.
-                Transform unit = GridManager.Instance.GetTileAtPosition(command.From).transform.GetChild(0);
-                bool isUnsolvable = unit.CompareTag("Box") && command.To == _goal;
-                if (isUnsolvable) { continue; }
-
-                // Record the new game vertex and update the adjacency list.
-                GridManager.Instance.MoveUnit(unit, command.To);
-                GridManager.Instance.UpdateTiles();
-
-                Vertex childVertex = _vertices.Pop();
-                _vertexIndex++;
-                childVertex.LateConstructor(_vertexIndex, parent, command);
-                _moveCount = childVertex.Moves.Count;
-
-                _adjacency[parent.Index].Add(childVertex);
-            }
+        if (_vertexIndex > _maxVertices - 5)
+        {
+            var message = $"No solution exists less than {_moveCount} moves.";
+            Debug.Log(message);
+            return true;
         }
+        else return false;
     }
 }

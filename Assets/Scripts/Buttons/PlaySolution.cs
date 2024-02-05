@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Linq;
 
 public class PlaySolution : MonoBehaviour
 {
@@ -21,34 +22,27 @@ public class PlaySolution : MonoBehaviour
             Debug.Log("No solution found.");
         }
         else {
-            if (!CommandManager.Instance.UnitIsMoving) {
+            if (!CommandManager.Instance.UnitIsMoving)
+            {
                 GridManager.Instance.UpdateTiles();
-                StartCoroutine(DOSolution(_graphScript.Solution.Moves));
+                var moves = _graphScript.Solution.Moves.ToList<MoveCommand>();
+                StartCoroutine(DOSolution(moves));
             }
         }
     }
 
     private IEnumerator DOSolution(List<MoveCommand> moves)
     {
-        List<Transform> boxes = GridManager.Instance.Boxes;
         CommandManager.Instance.UnitIsMoving = true;
-        foreach (MoveCommand move in moves) {
-            Transform unit = move.Unit;
-            // Detect if we're moving the player or a box.
-            if (move.Unit.CompareTag("Player")) {
-                unit = GridManager.Instance.Player;
-            }
-            else if (move.Unit.CompareTag("Box")) {
-                foreach (Transform box in boxes) {
-                    Vector3Int boxPos = GridManager.Instance.GetClosestCell(box.position);
-                    if (boxPos == move.From) {
-                        unit = box;
-                        break;
-                    }
-                }
-            }
+
+        foreach (MoveCommand move in moves)
+        {
+            Transform unit = GridManager.Instance.GetTileAtPosition(move.From).transform.GetChild(0);
+            
             Tween tween = unit.DOMove(move.To, 1).SetEase(Ease.InOutSine);
             yield return tween.WaitForCompletion();
+
+            GridManager.Instance.UpdateTiles();
         }
         CommandManager.Instance.UnitIsMoving = false;
     }

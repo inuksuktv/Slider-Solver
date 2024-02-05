@@ -6,70 +6,87 @@ using UnityEngine;
 
 public class Vertex: IEquatable<Vertex>
 {
-    public int Index { get; private set; }
-    public List<MoveCommand> Moves { get; private set; }
-    public List<Vector3Int> Boxes { get; private set; }
-    public Vector3Int PlayerLocation { get; private set; }
+    public int Index { get; private set; } = 0;
+    public MoveCommand[] Moves { get; private set; }
     public Vertex Parent { get; private set; }
+    public GameState State;
+
+    public struct GameState
+    {
+        public Vector3Int PlayerLocation { get; private set; }
+        public List<Vector3Int> BoxLocations { get; private set; }
+
+        public GameState(Vector3Int playerLocation, List<Vector3Int> boxLocations)
+        {
+            PlayerLocation = playerLocation;
+
+            BoxLocations = boxLocations.OrderBy(v => v.x).ToList();
+        }
+    }
 
     // Used for the starting vertex.
-    public void LateConstructor(Vector3Int playerPos, List<Vector3Int> boxes)
+    public void LateConstructor(GameState state)
     {
-        Index = 0;
-        PlayerLocation = playerPos;
+        State = state;
 
-        Boxes = new();
-        foreach (Vector3Int box in boxes) {
-            Boxes.Add(box);
-        }
-        Boxes = Boxes.OrderBy(v => v.x).ToList();
+        Moves = new MoveCommand[0];
 
         Parent = null;
-        Moves = new();
     }
 
     // Used for every other vertex.
-    public void LateConstructor(int index, Vertex parent, MoveCommand command)
+    public void SimulatorConstructor(GridSimulator gameBoard, int index, Vertex parent, MoveCommand simulatedMove)
     {
         Index = index;
-        PlayerLocation = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
 
-        Boxes = new();
-        foreach (Transform box in GridManager.Instance.Boxes) {
-            Boxes.Add(GridManager.Instance.GetClosestCell(box.position));
+        var player = gameBoard.Player;
+        Vector3Int playerLocation = new(player.X - 2, 0, player.Y - 2);
+
+        List<Vector3Int> boxLocations = new();
+        foreach (var box in gameBoard.Boxes)
+        {
+            boxLocations.Add(new Vector3Int(box.X - 2, 0, box.Y - 2));
         }
-        Boxes = Boxes.OrderBy(v => v.x).ToList();
+
+        State = new GameState(playerLocation, boxLocations);
 
         Parent = parent;
-        Moves = new();
-        MoveCommand[] moveArray = new MoveCommand[parent.Moves.Count];
-        parent.Moves.CopyTo(moveArray, 0);
-        foreach (MoveCommand move in moveArray) {
-            Moves.Add(move);
-        }
-        Moves.Add(command);
+
+        simulatedMove.ConvertSimulatedCoordinatesToGameSpace();
+
+        Moves = new MoveCommand[parent.Moves.Length + 1];
+        parent.Moves.CopyTo(Moves, 0);
+        Moves[^1] = simulatedMove;
     }
 
     public bool Equals(Vertex other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return PlayerLocation.Equals(other.PlayerLocation) && Boxes.Count == other.Boxes.Count && Boxes.TrueForAll(other.Boxes.Contains);
+        return (State.PlayerLocation.Equals(other.State.PlayerLocation) &&
+            (State.BoxLocations.Count == other.State.BoxLocations.Count) &&
+            State.BoxLocations.TrueForAll(other.State.BoxLocations.Contains));
     }
 
     public override bool Equals(object obj)
     {
-        return ReferenceEquals(this, obj) || obj is Vertex other && Equals(other);
+        return (ReferenceEquals(this, obj) ||
+            (obj is Vertex other) &&
+            Equals(other));
     }
 
     public override int GetHashCode()
     {
-        unchecked {
+        unchecked
+        {
             int hash = 17;
-            hash = hash * 23 + PlayerLocation.GetHashCode();
-            foreach (var box in Boxes) {
-                hash = hash * 23 + box.GetHashCode();
+
+            hash = (23 * hash) + State.PlayerLocation.GetHashCode();
+            foreach (var box in State.BoxLocations)
+            {
+                hash = (23 * hash) + box.GetHashCode();
             }
+
             return hash;
         }
     }

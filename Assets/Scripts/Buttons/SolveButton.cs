@@ -37,15 +37,10 @@ public class SolveButton : MonoBehaviour
     private IEnumerator Search()
     {
         GridManager.Instance.SearchIsRunning = true;
-        Vector3Int playerPosition = GridManager.Instance.GetClosestCell(GridManager.Instance.Player.position);
-        List<Transform> boxes = GridManager.Instance.Boxes;
-
-        _graphScript.FoundSolution = false;
 
         Stopwatch sw = new();
         sw.Start();
-        Coroutine search = StartCoroutine(_graphScript.BreadthFirstSearch(playerPosition, boxes));
-        yield return search;
+        yield return StartCoroutine(_graphScript.BreadthFirstSearch());
         sw.Stop();
         Debug.Log("Search elapsed time: " + sw.Elapsed);
         if (_graphScript.FoundSolution) {
@@ -61,6 +56,8 @@ public class SolveButton : MonoBehaviour
                 button.color = Color.red;
             }
         }
+        var initialGameState = _graphScript.Origin.State;
+        GridManager.Instance.SetGameboard(initialGameState);
         GridManager.Instance.SearchIsRunning = false;
     }
 }

@@ -1948,7 +1948,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d46c8c3279b15b4e9ad97e58c9a3492, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SearchIsRunning: 0
   TileOffset: -0.6
   slidePrefab: {fileID: 2222053095397704783, guid: 87a0ef049cf92d142bb7e547adb6b6e4, type: 3}
   wallTilePrefab: {fileID: 1154256661188788847, guid: 14cc6b2e30ec1e94d871449b7eb68b29, type: 3}
@@ -1994,7 +1993,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7de565a4ac88d0f41a0ab766546ee737, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxVertices: 100000
+  _maxVertices: 500000
   FoundSolution: 0
 --- !u!1 &1653844046
 GameObject:
